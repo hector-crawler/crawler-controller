@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 from flask import Flask, send_file, request
+from flask_cors import CORS
 import os
 import logging
 
 app = Flask(__name__)
+CORS(app)
 
 logger = logging.getLogger("werkzeug")
 logger.setLevel(logging.WARN)

@@ -1,14 +1,18 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import classNames from "classnames";
+import { useState } from "react";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -41,8 +45,67 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TopNavigation() {
+  const navbarRoutes = [
+    {
+      title: "Home",
+      path: "/",
+    },
+    {
+      title: "Manual Control",
+      path: "/manual-control",
+    },
+  ] satisfies { title: string, path: string }[];
+
+  const location = useLocation();
+
+  const navigationItems = (hideOnSmall: boolean) => <>
+    {navbarRoutes.map((route) => (
+      <li key={route.path} className={classNames(
+        "px-3 py-1.5 flex items-center opacity-40 transition duration-100",
+        { "opacity-100": location.pathname === route.path },
+        { "hidden sm:flex": hideOnSmall },
+      )}>
+        <Link to={route.path}>{route.title}</Link>
+      </li>
+    ))}
+    <li className="grow"></li>
+    <li className={classNames(
+      "px-3 py-1.5 flex items-center",
+      { "hidden sm:flex": hideOnSmall },
+    )}>
+      <a href="https://github.com/hector-crawler/crawler-controller" target="_blank">GitHub</a>
+    </li>
+  </>;
+
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <nav className="bg-gray-900 text-white p-3">
+      <ul className="flex gap-2">
+        <li>
+          <Link to="/" className="px-3 py-1.5 pr-5 font-bold flex items-center gap-4">
+            <img src="/favicon.ico" />
+            Crawler
+          </Link>
+        </li>
+        {navigationItems(true)}
+        <li className="px-3 py-1.5 sm:hidden flex items-center" onClick={() => setExpanded(expanded => !expanded)}>&#9776;</li>
+      </ul>
+      {expanded && (
+        <ul className="flex gap-2 mt-3 sm:hidden">
+          {navigationItems(false)}
+        </ul>
+      )}
+    </nav>
+  );
+}
+
 export default function App() {
-  return <Outlet />;
+  return <>
+    <TopNavigation />
+    <Outlet />
+  </>;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
