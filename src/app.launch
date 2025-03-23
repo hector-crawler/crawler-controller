@@ -1,9 +1,0 @@
-<launch>
-
-    <node name="Monitor_node" pkg="crawler_controller" type="monitor.py" output="screen">
-    </node>
-
-    <node name="App_node" pkg="crawler_controller" type="app.py" output="screen">
-    </node>
-
-</launch>

@@ -1,0 +1,16 @@
+[workspace]
+authors = ["JupiterPi <hello@jupiterpi.de>"]
+channels = ["conda-forge"]
+name = "crawler-controller"
+platforms = ["linux-aarch64"]
+version = "0.1.0"
+
+[tasks]
+build = "./build.sh"
+start-web = "flask --app crawler-web-api/app.py run"
+upload = "./upload.sh"
+
+[dependencies]
+python = ">=3.13.2,<3.14"
+flask = ">=3.1.0,<4"
+flask_cors = ">=4.0.0,<5"
