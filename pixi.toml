@@ -8,7 +8,7 @@ version = "0.1.0"
 [tasks]
 upload = "scripts/upload.sh"
 build-web = "scripts/build-and-install-web.sh"
-build = "colcon build"
+build-ros = "colcon build"
 launch = "ros2 launch crawler.launch"
 launch-web-api = "ros2 run crawler crawler_web_api"
 launch-blinker = "ros2 run crawler crawler_blinker"

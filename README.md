@@ -15,7 +15,18 @@ In local development environment:
 
 ### Build and run
 
-- (locally) `pixi run upload` to upload source files to the Pi
-- (on Pi) `pixi run build-web` (can also be done locally) and `pixi run build` to build the ROS package
-- (on Pi) `pixi run launch` to launch ROS nodes
-- access web interface on port 5000
+Move the source files to the Pi (either by cloning the Git repository on the Pi or by running `pixi run upload` on your local machine).
+
+Inside the source code folder on the Pi, run the following commands:
+
+- `pixi install` to install required dependencies
+- `pixi run build-web` to build the web app (this also works on the development machine)
+- `pixi run build` to build the ROS package
+- `pixi run build-web` to build the web app 
+- `pixi run build-ros` to build the ROS package
+- `pixi run launch` to launch all ROS nodes
+
+Now you can access the web interface on port 5000 of the Raspberry Pi.
+
+(Except for the final launch command, all other commands should also work
+on the development machine.)
