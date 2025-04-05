@@ -1,17 +1,37 @@
 # crawler-controller
 
-...
+The code for a crawling robot that learns to crawl by itself.
 
+The robot is build on a Raspberry Pi 4, this project uses
+the [Robot Operating System](https://ros.org/) (ROS) for interfacing
+with the hardware.
+
+### Repo overview
+
+The repo consists of a ROS package (located in `./crawler`) which is
+written in Python, as well as a web application in Typescript and [React](https://react.dev/)
+(in `./crawler-web-ui`). The `./scripts` folder contains miscellaneous
+files for building the various projects. We use [Pixi](https://pixi.sh/)
+as our build tool as well as for package management.
+
+The ROS package consists of a [Flask](https://palletsprojects.com/projects/flask/) server
+and various ROS publishers/subscribers. The Flask server routes the calls and the WebSocket
+connections that are made to the correct ROS commands.
+
+The web app is built into a static HTML page that gets copied into the ROS package
+as part of the build process and is served by the Flask server at runtime.
+
+## Usage
 
 ### Setup
 
-On Raspberry Pi:
-- make it accessible via SSH / FTP
-- install [Pixi](https://pixi.sh): `curl -fsSL https://pixi.sh/install.sh | sh`
-- install dependencies using Pixi: `pixi install`
+[Install Pixi](https://pixi.sh/latest/advanced/installation/)
+on both the Raspberry Pi and your local development machine (It's essentially just
+`curl -fsSL https://pixi.sh/install.sh | sh`).
 
-In local development environment:
-- create `upload-env.sh` inside `scripts` based on `upload-env.example.sh` and configure your connection
+Your Raspberry Pi needs to be accessible via SSH.
+
+On your local development machine, create `upload-env.sh` inside `./scripts` based on `upload-env.example.sh` and configure your connection.
 
 ### Build and run
 
@@ -20,8 +40,6 @@ Move the source files to the Pi (either by cloning the Git repository on the Pi 
 Inside the source code folder on the Pi, run the following commands:
 
 - `pixi install` to install required dependencies
-- `pixi run build-web` to build the web app (this also works on the development machine)
-- `pixi run build` to build the ROS package
 - `pixi run build-web` to build the web app 
 - `pixi run build-ros` to build the ROS package
 - `pixi run launch` to launch all ROS nodes
