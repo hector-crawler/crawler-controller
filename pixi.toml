@@ -2,7 +2,7 @@
 authors = ["JupiterPi <hello@jupiterpi.de>"]
 channels = ["robostack-jazzy", "conda-forge"]
 name = "crawler-controller"
-platforms = ["linux-aarch64"]
+platforms = ["linux-aarch64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
