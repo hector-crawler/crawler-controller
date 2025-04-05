@@ -30,3 +30,12 @@ rpi-gpio = ">=0.7.1, <0.8"
 luma-core = ">=2.4.2, <3"
 luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
+
+[feature.dev.dependencies]
+ruff = "*"
+jedi-language-server = "*"
+python-lsp-server-base = "*"
+python-lsp-server = "*"
+
+[environments]
+default = ["dev"]
