@@ -4,37 +4,30 @@ from std_msgs.msg import Empty
 
 import RPi.GPIO as GPIO
 
-#TODO make this an argument
-led_pin = 40
 
-class MinimalSubscriber(Node):
+class BlinkerSubscriber(Node):
     def __init__(self):
-        super().__init__("minimal_subscriber")
+        super().__init__("crawler_blinker_subscriber")
+
+        self.declare_parameter("led_pin", 40)
+        self.led_pin = self.get_parameter("led_pin").get_parameter_value().integer_value
 
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(led_pin, GPIO.OUT)
+        GPIO.setup(self.led_pin, GPIO.OUT)
 
-        queue_length = 5
-        self.subscription = self.create_subscription(
-            Empty, "led_blinker", self.listener_callback, queue_length
-        )
+        self.subscription = self.create_subscription(Empty, "crawler_blinker_toggle", self.toggle, 5)
 
-    def listener_callback(self, msg):
-        GPIO.output(led_pin, not GPIO.input(led_pin))
-        self.get_logger().info(f"Blinking pin {led_pin}")
+    def toggle(self, _):
+        GPIO.output(self.led_pin, not GPIO.input(self.led_pin))
+        self.get_logger().info(f"Toggled LED (GPIO pin {self.led_pin})")
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_subscriber = MinimalSubscriber()
-
-    rclpy.spin(minimal_subscriber)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    minimal_subscriber.destroy_node()
+    blinker_subscriber = BlinkerSubscriber()
+    rclpy.spin(blinker_subscriber)
+    
     rclpy.shutdown()
     GPIO.cleanup()
 

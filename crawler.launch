@@ -1,6 +1,8 @@
 <launch>
 
-    <node pkg="crawler" exec="crawler_blinker"></node>
+    <node pkg="crawler" exec="crawler_blinker">
+        <param name="led_pin" value="40" />
+    </node>
     
     <node pkg="crawler" exec="crawler_web_api"></node>
  

@@ -7,7 +7,7 @@ import logging
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Empty
+from std_msgs.msg import Empty
 
 
 app = Flask(__name__)
@@ -76,8 +76,8 @@ def api_move_hand():
 class WebApiPublisher(Node):
     
     def __init__(self):
-        super().__init__("test_publisher")
-        self.blink_publisher = self.create_publisher(Empty, "led_blinker", 10)
+        super().__init__("crawler_web_api_publisher")
+        self.blink_publisher = self.create_publisher(Empty, "crawler_blinker_toggle", 5)
 
     def blink(self):
         self.blink_publisher.publish(Empty())
