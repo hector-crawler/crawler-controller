@@ -1,5 +1,5 @@
 [workspace]
-authors = ["JupiterPi <hello@jupiterpi.de>"]
+authors = ["JupiterPi <hello@jupiterpi.de>", "Pascal Roth", "Gregor Niehl <gregorniehl@web.de>"]
 channels = ["robostack-jazzy", "conda-forge"]
 name = "crawler-controller"
 platforms = ["linux-aarch64", "linux-64"]
