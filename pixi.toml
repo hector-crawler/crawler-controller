@@ -1,16 +1,30 @@
 [workspace]
 authors = ["JupiterPi <hello@jupiterpi.de>"]
-channels = ["conda-forge"]
+channels = ["robostack-jazzy", "conda-forge"]
 name = "crawler-controller"
 platforms = ["linux-aarch64"]
 version = "0.1.0"
 
 [tasks]
-build = "./build.sh"
-start-web = "flask --app crawler-web-api/app.py run"
-upload = "./upload.sh"
+upload = "scripts/upload.sh"
+build-web = "scripts/build-and-install-web.sh"
+build = "colcon build"
+launch = "ros2 launch crawler.launch"
+launch-web-api = "ros2 run crawler crawler_web_api"
+launch-blinker = "ros2 run crawler crawler_blinker"
+
+[activation]
+scripts = ["install/setup.sh"]
 
 [dependencies]
-python = ">=3.13.2,<3.14"
+python = "==3.11.0"
 flask = ">=3.1.0,<4"
 flask_cors = ">=4.0.0,<5"
+ros-jazzy-desktop = ">=0.11.0,<0.12"
+colcon-common-extensions = ">=0.3.0,<0.4"
+setuptools = "<=58.2.0"
+
+[pypi-dependencies]
+"luma.core" = ">=2.4.2"
+"luma.oled" = ">=3.14.0"
+rpi-gpio = ">=0.7.1, <0.8"

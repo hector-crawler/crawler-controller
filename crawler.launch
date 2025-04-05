@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="crawler" exec="crawler_blinker"></node>
+    
+    <node pkg="crawler" exec="crawler_web_api"></node>
+ 
+</launch>

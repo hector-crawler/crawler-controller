@@ -3,3 +3,7 @@ upload-env.sh
 # pixi environments
 .pixi
 *.egg-info
+
+build
+install
+log

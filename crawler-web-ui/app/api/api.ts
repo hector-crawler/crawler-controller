@@ -25,6 +25,10 @@ export class API {
 
     // API
 
+    blink() {
+        return this.post("/blink");
+    }
+
     start() {
         return this.post("/start");
     }
@@ -38,6 +42,6 @@ export class API {
     }
 
     moveHand(step: number) {
-        return this.post("/moveHand", { step })
+        return this.post("/moveHand", { step });
     }
 }

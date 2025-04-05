@@ -17,6 +17,10 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
   return (
     <main className="flex flex-col items-center p-10 gap-6">
       <div className="flex justify-center">
+        <LargeButton label="blink" onClick={async () => await api.blink()} />
+      </div>
+
+      <div className="flex justify-center">
         <LargeButton label={available ? "stop" : "start"} onClick={async () => {
           if (!available) {
             await api.start();
