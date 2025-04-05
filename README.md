@@ -2,8 +2,8 @@
 
 The code for a crawling robot that learns to crawl by itself.
 
-The robot is build on a Raspberry Pi 4, this project uses
-the [Robot Operating System](https://ros.org/) (ROS) for interfacing
+The robot is built using a Raspberry Pi 4, our code uses the
+[Robot Operating System](https://ros.org/) (ROS) for interfacing
 with the hardware.
 
 ### Repo overview
