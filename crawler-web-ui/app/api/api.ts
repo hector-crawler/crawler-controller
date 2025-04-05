@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import useWebSocket from "react-use-websocket";
+
 export class API {
     // HTTP request utilities
 
@@ -12,9 +15,8 @@ export class API {
     private request(path: string, method: string, body: any | null) {
         return new Promise<void>((resolve, reject) => {
             if (!path.startsWith("/")) path = "/" + path;
-            const apiRoot = import.meta.env.VITE_API_ROOT as string;
-            fetch(`${apiRoot}/api${path}`, {
-                method: "POST",
+            fetch(`http://${window.location.host}${path}`, {
+                method,
                 body: body !== null ? JSON.stringify(body) : null,
                 headers: { "Content-Type": "application/json" },
             })
@@ -26,22 +28,32 @@ export class API {
     // API
 
     blink() {
-        return this.post("/blink");
+        return this.post("/api/blinker/toggle");
     }
 
     start() {
-        return this.post("/start");
+        return this.post("/api/start");
     }
 
     stop() {
-        return this.post("/stop");
+        return this.post("/api/stop");
     }
 
     moveArm(step: number) {
-        return this.post("/moveArm", { step });
+        return this.post("/api/moveArm", { step });
     }
 
     moveHand(step: number) {
-        return this.post("/moveHand", { step });
+        return this.post("/api/moveHand", { step });
+    }
+
+    useBlinkerState() {
+        const [state, setState] = useState<boolean | null>(null);
+        const { lastMessage } = useWebSocket(`ws://${window.location.host}/state/blinker/state`);
+        useEffect(() => {
+            const data = lastMessage !== null ? JSON.parse(lastMessage!.data) : { state: false };
+            setState(data.state);
+        }, [lastMessage]);
+        return state;
     }
 }

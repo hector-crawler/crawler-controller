@@ -14,10 +14,15 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
 
   const [available, setAvailable] = useState(false);
 
+  const blinkerState = api.useBlinkerState();
+
   return (
     <main className="flex flex-col items-center p-10 gap-6">
       <div className="flex justify-center">
-        <LargeButton label="blink" onClick={async () => await api.blink()} />
+        <LargeButton
+          label={`blink (is ${blinkerState !== null ? (blinkerState ? "on" : "off") : "undefined"})`}
+          onClick={async () => await api.blink()}
+        />
       </div>
 
       <div className="flex justify-center">
