@@ -5,13 +5,25 @@ name = "crawler-controller"
 platforms = ["linux-aarch64", "linux-64"]
 version = "0.1.0"
 
+
 [tasks]
+
+# upload source to Pi
 upload = "scripts/upload.sh"
+
+# build crawler-web-ui and ROS package
 build-web = "scripts/build-and-install-web.sh"
 build-ros = "colcon build"
-launch = "ros2 launch crawler.launch"
+
+# launch ROS nodes
+launch = "ros2 launch crawler.launch" # all
 launch-web-api = "ros2 run crawler crawler_web_api"
 launch-blinker = "ros2 run crawler crawler_blinker"
+
+# for development
+dev-ros = { depends-on = ["build-ros"], cmd = "export CRAWLER_ENV=dev && ros2 launch crawler.launch" }
+dev-web = "cd crawler-web-ui && npm run dev"
+
 
 [activation]
 scripts = ["install/setup.sh"]

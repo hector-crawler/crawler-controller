@@ -19,7 +19,6 @@ setup(
     maintainer_email='hello@jupiterpi.de',
     description='TODO: Package description',
     license='TODO: License declaration',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'crawler_test = crawler.crawler_test:main',

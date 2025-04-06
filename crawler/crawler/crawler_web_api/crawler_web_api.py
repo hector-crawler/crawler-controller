@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, send_file
+from flask import Flask, send_file, request
 from flask_cors import CORS
 from flask_sock import Sock
 import json
@@ -58,48 +58,54 @@ def favicon():
 
 # API routes
 
-ws_blinker_state = []
-
-@app.route("/api/blinker/toggle", methods=["POST"])
+@app.route("/api/manual/blinker/toggle", methods=["POST"])
 def api_blink():
     publisher.blinker_toggle()
     return "ok"
 
-@app.route("/api/blinker/write", methods=["POST"])
-def api_blinker_write(request):
+@app.route("/api/manual/blinker/write", methods=["POST"])
+def api_blinker_write():
     state = request.json.get("state")
     publisher.blinker_write(state)
     return "ok"
 
-@app.route("/api/start", methods = ["POST"])
-def api_start():
-    #TODO implement
-    return "started"
-
-@app.route("/api/stop", methods = ["POST"])
-def api_stop():
-    #TODO implement
-    return "stopped"
-
-@app.route("/api/moveArm", methods = ["POST"])
+@app.route("/api/manual/moveArm", methods = ["POST"])
 def api_move_arm():
     #TODO implement
     return "arm moved"
 
-@app.route("/api/moveHand", methods = ["POST"])
+@app.route("/api/manual/moveHand", methods = ["POST"])
 def api_move_hand():
     #TODO implement
     return "hand moved"
 
-@sock.route("/state/blinker/state")
+
+class WebSocketStateBroadcast():
+    def __init__(self, initial_state):
+        self.connections = []
+        self.state = initial_state
+    
+    def handle_connection(self, ws):
+        self.connections.append(ws)
+        ws.send(json.dumps(self.state))
+        try:
+            while True:
+                ws.receive()
+        finally:
+            self.connections.remove(ws)
+    
+    def update_state(self, partial_update):
+        self.state.update(partial_update)
+        for ws in self.connections:
+            ws.send(json.dumps(self.state))
+        
+
+ws_blinker_state = WebSocketStateBroadcast({"blinker": False})
+
+@sock.route("/api/manual/state")
 def api_blinker_state(ws):
-    global ws_blinker_state
-    ws_blinker_state.append(ws)
-    try:
-        while True:
-            ws.receive()
-    finally:
-        ws_blinker_state.remove(ws)
+    ws_blinker_state.handle_connection(ws)
+    
 
 
 # ROS publisher
@@ -128,6 +134,4 @@ class WebApiSubscriber(Node):
         self.create_subscription(Bool, "crawler_blinker_state", self.blinker_state, 5)
 
     def blinker_state(self, msg):
-        global ws_blinker_state
-        for ws in ws_blinker_state:
-            ws.send(json.dumps({ "state": msg.data }))
+        ws_blinker_state.update_state({"blinker": msg.data})

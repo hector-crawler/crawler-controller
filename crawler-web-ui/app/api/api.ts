@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import useWebSocket from "react-use-websocket";
 
+export type ManualState = {
+    blinker: boolean,
+}
+
 export class API {
+    private apiHost = import.meta.env.VITE_API_ROOT || window.location.host
+
     // HTTP request utilities
 
     private get(path: string, body: any | null = null) {
@@ -15,7 +21,7 @@ export class API {
     private request(path: string, method: string, body: any | null) {
         return new Promise<void>((resolve, reject) => {
             if (!path.startsWith("/")) path = "/" + path;
-            fetch(`http://${window.location.host}${path}`, {
+            fetch(`http://${this.apiHost}${path}`, {
                 method,
                 body: body !== null ? JSON.stringify(body) : null,
                 headers: { "Content-Type": "application/json" },
@@ -27,32 +33,27 @@ export class API {
 
     // API
 
-    blink() {
-        return this.post("/api/blinker/toggle");
+    toggleBlinker() {
+        return this.post("/api/manual/blinker/toggle");
     }
 
-    start() {
-        return this.post("/api/start");
-    }
-
-    stop() {
-        return this.post("/api/stop");
+    writeBlinker(state: boolean) {
+        return this.post("/api/manual/blinker/write", { state });
     }
 
     moveArm(step: number) {
-        return this.post("/api/moveArm", { step });
+        return this.post("/api/manual/moveArm", { step });
     }
 
     moveHand(step: number) {
-        return this.post("/api/moveHand", { step });
+        return this.post("/api/manual/moveHand", { step });
     }
 
-    useBlinkerState() {
-        const [state, setState] = useState<boolean | null>(null);
-        const { lastMessage } = useWebSocket(`ws://${window.location.host}/state/blinker/state`);
+    useManualState() {
+        const [state, setState] = useState<ManualState>({ blinker: false });
+        const { lastMessage } = useWebSocket(`ws://${this.apiHost}/api/manual/state`);
         useEffect(() => {
-            const data = lastMessage !== null ? JSON.parse(lastMessage!.data) : { state: false };
-            setState(data.state);
+            if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
         }, [lastMessage]);
         return state;
     }

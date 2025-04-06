@@ -14,24 +14,26 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
 
   const [available, setAvailable] = useState(false);
 
-  const blinkerState = api.useBlinkerState();
+  const manualState = api.useManualState();
 
   return (
     <main className="flex flex-col items-center p-10 gap-6">
-      <div className="flex justify-center">
-        <LargeButton
-          label={`blink (is ${blinkerState !== null ? (blinkerState ? "on" : "off") : "undefined"})`}
-          onClick={async () => await api.blink()}
-        />
+      <div className="flex justify-center gap-2 border-blue-500 border-1 p-2 rounded-xl">
+        <div className="flex justify-center items-center pl-1">
+          <div className={classNames("h-8 w-8 rounded-full bg-gray-700 transition-[background] duration-100", { "bg-white": manualState.blinker })}></div>
+        </div>
+        <LargeButton label="toggle" onClick={async () => await api.toggleBlinker()} />
+        <LargeButton label="on" onClick={async () => await api.writeBlinker(true)} />
+        <LargeButton label="off" onClick={async () => await api.writeBlinker(false)} />
       </div>
 
       <div className="flex justify-center">
         <LargeButton label={available ? "stop" : "start"} onClick={async () => {
           if (!available) {
-            await api.start();
+            //await api.start(); TODO fix
             setAvailable(true);
           } else {
-            await api.stop();
+            //await api.stop(); TODO fix
             setAvailable(false);
           }
         }} />
@@ -61,7 +63,6 @@ function LargeButton({
   const [isLit, setIsLit] = useState(false);
 
   const handleClick = () => {
-    if (isLit) return;
     onClick();
     setIsLit(true);
     setTimeout(() => {
