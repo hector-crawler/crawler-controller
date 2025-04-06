@@ -19,6 +19,7 @@ build-ros = "colcon build"
 launch = "ros2 launch crawler.launch" # all
 launch-web-api = "ros2 run crawler crawler_web_api"
 launch-blinker = "ros2 run crawler crawler_blinker"
+launch-motors = "ros2 run crawler crawler_motors"
 
 # for development
 dev-ros = { depends-on = ["build-ros"], cmd = "export CRAWLER_ENV=dev && ros2 launch crawler.launch" }

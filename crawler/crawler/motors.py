@@ -20,7 +20,7 @@ MOTOR_LIMITS = {
 MOTORS_STEP = 250
 
 
-class MotorsListener(Node):
+class Motors(Node):
     def __init__(self):
         super().__init__("motor_control_subscriber")
 
@@ -90,7 +90,7 @@ class MotorsListener(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    motors_node = MotorsListener()
+    motors_node = Motors()
     rclpy.spin(motors_node)
     rclpy.shutdown()
 

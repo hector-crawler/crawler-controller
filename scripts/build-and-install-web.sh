@@ -10,6 +10,6 @@ npm run build
 
 # install crawler-web-ui into crawler-web-api
 echo "Installing crawler-web-ui into crawler_web_api..."
-rm -r $root/crawler/crawler/crawler_web_api/web-ui
-mkdir $root/crawler/crawler/crawler_web_api/web-ui
-cp -r $root/crawler-web-ui/build/client/* $root/crawler/crawler/crawler_web_api/web-ui
+rm -r $root/crawler/crawler/web-ui
+mkdir $root/crawler/crawler/web-ui
+cp -r $root/crawler-web-ui/build/client/* $root/crawler/crawler/web-ui

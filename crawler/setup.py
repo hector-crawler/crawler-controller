@@ -21,9 +21,9 @@ setup(
     license='TODO: License declaration',
     entry_points={
         'console_scripts': [
-            'crawler_test = crawler.crawler_test:main',
-            'crawler_web_api = crawler.crawler_web_api.crawler_web_api:main',
-            'crawler_blinker = crawler.crawler_blinker:main'
+            'crawler_web_api = crawler.web_api:main',
+            'crawler_blinker = crawler.blinker:main',
+            'crawler_motors = crawler.motors:main',
         ],
     },
 )
