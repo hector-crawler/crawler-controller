@@ -31,7 +31,7 @@ on both the Raspberry Pi and your local development machine (It's essentially ju
 
 Your Raspberry Pi needs to be accessible via SSH.
 
-On your local development machine, create `upload-env.sh` inside `./scripts` based on `upload-env.example.sh` and configure your connection.
+On your local development machine, run `pixi run upload --new` to configure your connection. 
 
 ### Build and run
 
