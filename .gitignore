@@ -1,6 +1,5 @@
 scripts/upload-env.sh
 scripts/upload-env.*.sh
-!scripts/upload-env.example.sh
 
 # pixi environments
 .pixi
