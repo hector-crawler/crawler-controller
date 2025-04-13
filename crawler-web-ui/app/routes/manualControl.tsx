@@ -49,12 +49,13 @@ function BlinkerController({ onToggle, onOn, onOff, state }: { onToggle: () => v
 }
 
 function MotorController({ onMove, position }: { onMove: (factor: number) => void, position: number }) {
+  if (isNaN(position)) position = 0;
   return (
     <div className="flex flex-col justify-center gap-3 border-blue-500 border-1 p-2 rounded-xl">
       <LargeButton onClick={() => onMove(1)} smallPadding={true}><UpIcon /></LargeButton>
       <div className="flex justify-center items-center h-30 relative">
         <div className="absolute left-50% bg-gray-700 w-1.5 h-30 rounded-full"></div>
-        <div className="absolute bg-gray-800 w-10 h-6 rounded-xl text-sm flex justify-center items-center top-0 transition-[top]" style={{ top: (100 - position) / 100 * (26 * 4) }}>{position}</div>
+        <div className="absolute bg-gray-800 w-10 h-6 rounded-xl text-sm flex justify-center items-center top-0 transition-[top]" style={{ top: (100 - (isNaN(position) ? 0 : position)) / 100 * (26 * 4) }}>{position}</div>
       </div>
       <LargeButton onClick={() => onMove(-1)} smallPadding={true}><DownIcon /></LargeButton>
     </div >
