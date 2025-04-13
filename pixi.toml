@@ -13,7 +13,7 @@ upload = "scripts/upload.sh"
 
 # build crawler-web-ui and ROS package
 build-web = "scripts/build-and-install-web.sh"
-build-ros = "colcon build"
+build-ros = "scripts/build-ros.sh"
 
 # launch ROS nodes
 launch = "ros2 launch crawler.launch" # all
@@ -27,7 +27,7 @@ dev-web = "cd crawler-web-ui && npm run dev"
 
 
 [activation]
-scripts = ["install/setup.sh"]
+scripts = ["build-env.sh", "install/setup.sh"]
 
 [dependencies]
 python = ">=3.11.11,<3.12"

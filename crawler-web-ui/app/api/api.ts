@@ -21,19 +21,23 @@ export class API {
     }
 
     private request(path: string, method: string, body: any | null) {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             if (!path.startsWith("/")) path = "/" + path;
             fetch(`http://${this.apiHost}${path}`, {
                 method,
                 body: body !== null ? JSON.stringify(body) : null,
                 headers: { "Content-Type": "application/json" },
             })
-                .then(() => resolve())
+                .then(response => response.text().then(text => resolve(text)))
                 .catch(() => reject());
         });
     }
 
     // API
+
+    getBuildMetadata() {
+        return this.get("/buildMetadata");
+    }
 
     toggleBlinker() {
         return this.post("/api/manual/blinker/toggle");

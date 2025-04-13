@@ -1,10 +1,13 @@
+# scripts
 scripts/upload-env.sh
 scripts/upload-env.*.sh
+build-env.sh
 
 # pixi environments
 .pixi
 *.egg-info
 
+# ros
 build
 install
 log

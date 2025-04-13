@@ -12,7 +12,8 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import classNames from "classnames";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { API } from "./api/api";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -101,10 +102,24 @@ function TopNavigation() {
   );
 }
 
+function Footer() {
+  const [buildMetadata, setBuildMetadata] = useState("...");
+  useEffect(() => {
+    new API().getBuildMetadata().then(setBuildMetadata);
+  }, []);
+
+  return (
+    <div className="fixed bottom-0 right-0 bg-gray-900 px-1.5 rounded-tl-lg text-gray-500 text-sm border-t-1 border-l-1 border-gray-800">
+      {buildMetadata}
+    </div>
+  );
+}
+
 export default function App() {
   return <>
     <TopNavigation />
     <Outlet />
+    <Footer />
   </>;
 }
 

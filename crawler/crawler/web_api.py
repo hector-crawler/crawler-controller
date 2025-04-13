@@ -55,6 +55,10 @@ def serve_single_page_app(path):
 def favicon(): 
     return send_file(os.path.join("web-ui", "favicon.ico"))
 
+@app.route("/buildMetadata")
+def get_build_metadata():
+    return os.environ.get("CRAWLER_BUILD_METADATA", "unknown build")
+
 
 # API routes
 
