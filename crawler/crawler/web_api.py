@@ -10,7 +10,7 @@ from threading import Thread
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Empty, Bool
+from std_msgs.msg import Empty, Bool, Int32
 
 
 app = Flask(__name__)
@@ -71,13 +71,15 @@ def api_blinker_write():
 
 @app.route("/api/manual/moveArm", methods = ["POST"])
 def api_move_arm():
-    #TODO implement
-    return "arm moved"
+    step = request.json.get("step")
+    publisher.arm_move(step)
+    return "ok"
 
 @app.route("/api/manual/moveHand", methods = ["POST"])
 def api_move_hand():
-    #TODO implement
-    return "hand moved"
+    step = request.json.get("step")
+    publisher.hand_move(step)
+    return "ok"
 
 
 class WebSocketStateBroadcast():
@@ -118,12 +120,20 @@ class WebApiPublisher(Node):
 
         self.blinker_toggle_publisher = self.create_publisher(Empty, "crawler_blinker_toggle", 5)
         self.blinker_write_publisher = self.create_publisher(Bool, "crawler_blinker_write", 5)
+        self.arm_move_publisher = self.create_publisher(Int32, "crawler_arm_move", 5)
+        self.hand_move_publisher = self.create_publisher(Int32, "crawler_hand_move", 5)
 
     def blinker_toggle(self):
         self.blinker_toggle_publisher.publish(Empty())
 
     def blinker_write(self, state):
         self.blinker_write_publisher.publish(Bool(data=state))
+    
+    def arm_move(self, step):
+        self.arm_move_publisher.publish(Int32(data=step))
+    
+    def hand_move(self, step):
+        self.hand_move_publisher.publish(Int32(data=step))
 
 
 class WebApiSubscriber(Node):
@@ -132,6 +142,14 @@ class WebApiSubscriber(Node):
         super().__init__("crawler_web_api_subscriber")
 
         self.create_subscription(Bool, "crawler_blinker_state", self.blinker_state, 5)
+        self.create_subscription(Int32, "crawler_arm_position", self.arm_position, 5)
+        self.create_subscription(Int32, "crawler_hand_position", self.hand_position, 5)
 
     def blinker_state(self, msg):
         ws_blinker_state.update_state({"blinker": msg.data})
+
+    def arm_position(self, msg):
+        ws_blinker_state.update_state({"armPosition": msg.data})
+    
+    def hand_position(self, msg):
+        ws_blinker_state.update_state({"handPosition": msg.data})

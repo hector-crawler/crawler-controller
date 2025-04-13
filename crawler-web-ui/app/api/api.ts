@@ -3,6 +3,8 @@ import useWebSocket from "react-use-websocket";
 
 export type ManualState = {
     blinker: boolean,
+    armPosition: number,
+    handPosition: number,
 }
 
 export class API {
@@ -50,7 +52,7 @@ export class API {
     }
 
     useManualState() {
-        const [state, setState] = useState<ManualState>({ blinker: false });
+        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: 0, handPosition: 0 });
         const { lastMessage } = useWebSocket(`ws://${this.apiHost}/api/manual/state`);
         useEffect(() => {
             if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
