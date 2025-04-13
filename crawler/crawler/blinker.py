@@ -14,9 +14,9 @@ class Blinker(Node):
 
         self.led = Led(self.led_pin)
 
-        self.create_subscription(Empty, "crawler_blinker_toggle", self.toggle, 5)
-        self.create_subscription(Bool, "crawler_blinker_write", self.write, 5)
-        self.state_publisher = self.create_publisher(Bool, "crawler_blinker_state", 5)
+        self.create_subscription(Empty, "/crawler/blinker/toggle", self.toggle, 5)
+        self.create_subscription(Bool, "/crawler/blinker/write", self.write, 5)
+        self.state_publisher = self.create_publisher(Bool, "/crawler/blinker/state", 5)
 
     def toggle(self, _):
         state = not self.led.read_state()

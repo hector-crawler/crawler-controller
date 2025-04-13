@@ -11,10 +11,10 @@ class MotorsNode(Node):
 
         self.motors = Motors()
 
-        self.create_subscription(Int32, "crawler_arm_move", self.move_arm, 5)
-        self.arm_publisher = self.create_publisher(Int32, "crawler_arm_position", 5)
-        self.create_subscription(Int32, "crawler_hand_move", self.move_hand, 5)
-        self.hand_publisher = self.create_publisher(Int32, "crawler_hand_position", 5)
+        self.create_subscription(Int32, "/crawler/arm/move", self.move_arm, 5)
+        self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/position", 5)
+        self.create_subscription(Int32, "/crawler/hand/move", self.move_hand, 5)
+        self.hand_publisher = self.create_publisher(Int32, "/crawler/hand/position", 5)
 
     def move_arm(self, msg):
         step = msg.data

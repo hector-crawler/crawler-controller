@@ -26,13 +26,13 @@ class Motors(Node):
 
         self.create_subscription(
             Bool,
-            "crawler_hand_move",
+            "/crawler/hand/move",
             (lambda self, msg: self.move_motor(DXL_ID_1, msg.data)),
             5,
         )
         self.create_subscription(
             Bool,
-            "crawler_arm_move",
+            "/crawler/arm/move",
             (lambda self, msg: self.move_motor(DXL_ID_2, msg.data)),
             5,
         )

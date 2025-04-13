@@ -25,8 +25,6 @@ publisher = None
 subscriber = None
 
 def main(args=None):
-    print("Starting crawler_web_api")
-
     rclpy.init(args=args)
     global publisher
     publisher = WebApiPublisher()
@@ -122,10 +120,10 @@ class WebApiPublisher(Node):
     def __init__(self):
         super().__init__("crawler_web_api_publisher")
 
-        self.blinker_toggle_publisher = self.create_publisher(Empty, "crawler_blinker_toggle", 5)
-        self.blinker_write_publisher = self.create_publisher(Bool, "crawler_blinker_write", 5)
-        self.arm_move_publisher = self.create_publisher(Int32, "crawler_arm_move", 5)
-        self.hand_move_publisher = self.create_publisher(Int32, "crawler_hand_move", 5)
+        self.blinker_toggle_publisher = self.create_publisher(Empty, "/crawler/blinker/toggle", 5)
+        self.blinker_write_publisher = self.create_publisher(Bool, "/crawler/blinker/write", 5)
+        self.arm_move_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
+        self.hand_move_publisher = self.create_publisher(Int32, "/crawler/hand/move", 5)
 
     def blinker_toggle(self):
         self.blinker_toggle_publisher.publish(Empty())
@@ -145,9 +143,9 @@ class WebApiSubscriber(Node):
     def __init__(self):
         super().__init__("crawler_web_api_subscriber")
 
-        self.create_subscription(Bool, "crawler_blinker_state", self.blinker_state, 5)
-        self.create_subscription(Int32, "crawler_arm_position", self.arm_position, 5)
-        self.create_subscription(Int32, "crawler_hand_position", self.hand_position, 5)
+        self.create_subscription(Bool, "/crawler/blinker/state", self.blinker_state, 5)
+        self.create_subscription(Int32, "/crawler/arm/position", self.arm_position, 5)
+        self.create_subscription(Int32, "/crawler/hand/position", self.hand_position, 5)
 
     def blinker_state(self, msg):
         ws_blinker_state.update_state({"blinker": msg.data})
