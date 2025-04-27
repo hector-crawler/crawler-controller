@@ -1,11 +1,11 @@
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 package_name = 'crawler'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=find_packages(exclude=['test']),
+    packages=find_namespace_packages(exclude=['test']),
     package_data={'': ['web-ui/**', 'web-ui/*/**']},
     include_package_data=True,
     data_files=[
