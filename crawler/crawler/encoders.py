@@ -1,8 +1,9 @@
 import os
+from typing import Callable
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32
-from typing import Callable
 
 
 class EncodersNode(Node):
@@ -11,11 +12,12 @@ class EncodersNode(Node):
 
         self.encoders = Encoders(self.publish_left_encoder, self.publish_right_encoder)
 
+        queue_len = 5
         self.left_encoder_publisher = self.create_publisher(
-            Int32, "/crawler/left_encoder/position", 5
+            Int32, "/crawler/left_encoder/position", queue_len
         )
         self.right_encoder_publisher = self.create_publisher(
-            Int32, "/crawler/right_encoder/position", 5
+            Int32, "/crawler/right_encoder/position", queue_len
         )
 
         # only for mocked encoders
@@ -23,13 +25,13 @@ class EncodersNode(Node):
             Int32,
             "/crawler/left_encoder/mock",
             lambda msg: self.encoders.mock_left_encoder_position(msg.data),
-            5,
+            queue_len,
         )
         self.create_subscription(
             Int32,
             "/crawler/right_encoder/mock",
             lambda msg: self.encoders.mock_right_encoder_position(msg.data),
-            5,
+            queue_len,
         )
 
     def publish_left_encoder(self, position: int) -> None:
@@ -56,7 +58,9 @@ class PhysicalEncoders:
 
 class MockEncoders:
     def __init__(
-        self, left_encoder_callback: Callable, right_encoder_callback: Callable
+        self,
+        left_encoder_callback: Callable[[int], None],
+        right_encoder_callback: Callable[[int], None],
     ) -> None:
         self.left_encoder_callback = left_encoder_callback
         self.right_encoder_callback = right_encoder_callback
@@ -70,10 +74,7 @@ class MockEncoders:
 
 def main(args=None):
     rclpy.init(args=args)
-
-    encoders = EncodersNode()
-    rclpy.spin(encoders)
-
+    rclpy.spin(EncodersNode())
     rclpy.shutdown()
 
 
