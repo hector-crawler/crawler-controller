@@ -777,6 +777,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zziplib-0.13.69-he45264a_2.conda
       - pypi: https://files.pythonhosted.org/packages/e1/84/e177d9bef4749d14f31c513b25e341ac84e403e2ffa2bde562eac9e6184b/cbor2-5.6.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d8/98/107728ce3f430b5481eb426ccc5e1f7c8ab0bd01eaf231c62a8d528ff721/flask_sock-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/95/04/ff642e65ad6b90db43e668d70ffb6736436c7ce41fcc549f4e9472234127/h11-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6e/d0/f4022b3f17dec1bee5920526b4f2b7850ac2b70cc3420231bd498a828c6b/luma.core-2.4.2-py2.py3-none-any.whl
@@ -1551,6 +1552,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/zstd-1.5.7-hbcf94c1_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/zziplib-0.13.69-h650d8d0_2.conda
       - pypi: https://files.pythonhosted.org/packages/0f/1e/2010f6d02dd117df88df64baf3eeca6aa6614cc81bdd6bfabf615889cf1f/cbor2-5.6.5-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+      - pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d8/98/107728ce3f430b5481eb426ccc5e1f7c8ab0bd01eaf231c62a8d528ff721/flask_sock-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/95/04/ff642e65ad6b90db43e668d70ffb6736436c7ce41fcc549f4e9472234127/h11-0.14.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6e/d0/f4022b3f17dec1bee5920526b4f2b7850ac2b70cc3420231bd498a828c6b/luma.core-2.4.2-py2.py3-none-any.whl
@@ -3070,6 +3072,12 @@ packages:
   purls: []
   size: 67140
   timestamp: 1739571636249
+- pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
+  name: dynamixel-sdk
+  version: 3.7.31
+  sha256: 74e8c112ca6b0b869b196dd8c6a44ffd5dd5c1a3cb9fe2030e9933922406b466
+  requires_dist:
+  - pyserial
 - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-3.4.0-h00ab1b0_0.conda
   sha256: 53b15a98aadbe0704479bacaf7a5618fcb32d1577be320630674574241639b34
   md5: b1b879d6d093f55dd40d58b5eb2f0699

@@ -43,6 +43,7 @@ rpi-gpio = ">=0.7.1, <0.8"
 luma-core = ">=2.4.2, <3"
 luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
+dynamixel-sdk = ">=3.7.31, <4"
 
 [feature.dev.dependencies]
 python-lsp-server-base = "*"
