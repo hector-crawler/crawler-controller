@@ -8,6 +8,9 @@
 
     <node pkg="crawler" exec="crawler_motors"></node>
 
-    <node pkg="crawler" exec="crawler_encoders"></node>
+    <node pkg="crawler" exec="crawler_encoders">
+        <param name="left_encoder_pin_a" value="36" />
+        <param name="left_encoder_pin_a" value="38" />
+    </node>
  
 </launch>
