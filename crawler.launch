@@ -7,5 +7,7 @@
     </node>
 
     <node pkg="crawler" exec="crawler_motors"></node>
+
+    <node pkg="crawler" exec="crawler_encoders"></node>
  
 </launch>

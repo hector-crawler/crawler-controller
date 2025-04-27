@@ -31,6 +31,19 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
         <MotorController onMove={async (factor) => await api.moveArm(factor * 10)} position={manualState.armPosition} />
         <MotorController onMove={async (factor) => await api.moveHand(factor * 10)} position={manualState.handPosition} />
       </div>
+
+      {/* encoders */}
+      <div className="flex gap-6">
+        <EncodersController position={manualState.leftEncoderPosition} />
+        <EncodersController position={manualState.rightEncoderPosition} />
+      </div>
+
+      {api.isDev && <div className="grid grid-cols-2 gap-3">
+        <LargeButton smallPadding={true} onClick={async () => await api.mockLeftEncoder(manualState.leftEncoderPosition + 10)}>left +10</LargeButton>
+        <LargeButton smallPadding={true} onClick={async () => await api.mockRightEncoder(manualState.rightEncoderPosition + 10)}>right +10</LargeButton>
+        <LargeButton smallPadding={true} onClick={async () => await api.mockLeftEncoder(manualState.leftEncoderPosition - 10)}>left -10</LargeButton>
+        <LargeButton smallPadding={true} onClick={async () => await api.mockRightEncoder(manualState.rightEncoderPosition - 10)}>right -10</LargeButton>
+      </div>}
     </main>
   );
 }
@@ -59,6 +72,19 @@ function MotorController({ onMove, position }: { onMove: (factor: number) => voi
       </div>
       <LargeButton onClick={() => onMove(-1)} smallPadding={true}><DownIcon /></LargeButton>
     </div >
+  )
+}
+
+function EncodersController({ position }: { position: number }) {
+  return (
+    <div className="rounded-full border-blue-500 border-1 size-25 flex justify-center items-center relative">
+      <div className="absolute size-full flex justify-center items-center">
+        <div className="bg-gray-800 p-0.5 w-10 h-6 rounded-xl text-sm flex justify-center items-center">{position}</div>
+      </div>
+      <div className="absolute size-19 border-gray-700 border-5 rounded-full transition-[transform]" style={{transform: `rotate(${position}deg)`}}>
+        <div className="absolute translate-x-[calc(var(--spacing)*7.3)] -translate-y-2 w-2 h-4 bg-blue-500 rounded-xl"></div>
+      </div>
+    </div>
   )
 }
 

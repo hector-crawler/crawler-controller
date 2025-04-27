@@ -5,10 +5,13 @@ export type ManualState = {
     blinker: boolean,
     armPosition: number,
     handPosition: number,
+    leftEncoderPosition: number,
+    rightEncoderPosition: number,
 }
 
 export class API {
     private apiHost = import.meta.env.VITE_API_ROOT || window.location.host
+    public readonly isDev = import.meta.env.VITE_API_ROOT.includes("localhost")
 
     // HTTP request utilities
 
@@ -55,8 +58,16 @@ export class API {
         return this.post("/api/manual/moveHand", { step });
     }
 
+    mockLeftEncoder(position: number) {
+        return this.post("/api/manual/mockLeftEncoder", { position });
+    }
+
+    mockRightEncoder(position: number) {
+        return this.post("/api/manual/mockRightEncoder", { position });
+    }
+
     useManualState() {
-        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: 0, handPosition: 0 });
+        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: 0, handPosition: 0, leftEncoderPosition: 0, rightEncoderPosition: 0 });
         const { lastMessage } = useWebSocket(`ws://${this.apiHost}/api/manual/state`);
         useEffect(() => {
             if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
