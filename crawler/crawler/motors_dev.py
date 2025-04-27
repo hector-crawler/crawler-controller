@@ -21,7 +21,7 @@ class MotorsNode(Node):
         result = self.motors.move_arm(step)
         self.get_logger().info(f"Moved arm by {step} to {result}")
         self.arm_publisher.publish(Int32(data=result))
-    
+
     def move_hand(self, msg):
         step = msg.data
         result = self.motors.move_hand(step)
@@ -33,16 +33,16 @@ def Motors():
     return MockMotors() if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalMotors()
 
 
-class PhysicalMotors():
+class PhysicalMotors:
     def __init__(self):
         raise NotImplementedError("Physical motors not implemented yet")
 
 
-class MockMotors():
+class MockMotors:
     def __init__(self):
         self.hand_position = 50
         self.arm_position = 50
-    
+
     def move_arm(self, step):
         self.arm_position = max(0, min(100, self.arm_position + step))
         return self.arm_position
@@ -57,7 +57,7 @@ def main(args=None):
 
     motors = MotorsNode()
     rclpy.spin(motors)
-    
+
     rclpy.shutdown()
 
 
