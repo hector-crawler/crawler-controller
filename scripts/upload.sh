@@ -28,7 +28,7 @@ fi
 
 # check if upload-env.sh is configured
 if [[ -z $SSH_HOSTADDRESS ]]; then
-  echo "Please configure scripts/upload-env.sh based on upload-env.example.sh"
+  echo "Please create an environment (pixi run upload --new) and specify it (pixi run upload <environment>)"
   exit 1
 fi
 
@@ -38,5 +38,5 @@ if [[ $1 == "--build-web" || $2 == "--build-web" ]]; then
 fi
 
 # upload source files
-rsync -r . --exclude={.pixi,upload-env.sh,build,install,log,**node_modules,**__pycache__} \
-    -e "ssh -p $SSH_PORT" -- $SSH_USERNAME@$SSH_HOSTADDRESS:$SAVE_PATH
+rsync -r . --exclude={.git,.pixi,upload-env.sh,build,install,log,**node_modules,**__pycache__} \
+    -e "ssh -p $SSH_PORT" -- $SSH_USERNAME@$SSH_HOSTADDRESS:$UPLOAD_PATH
