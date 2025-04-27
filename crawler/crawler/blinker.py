@@ -38,32 +38,32 @@ class Blinker(Node):
         self.state_publisher.publish(Bool(data=state))
 
 
-def Led(led_pin:int):
+def Led(led_pin: int):
     return MockLed() if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalLed(led_pin)
 
 
 class PhysicalLed:
-    def __init__(self, pin:int)->None:
+    def __init__(self, pin: int) -> None:
         self.pin = pin
         self.GPIO = importlib.import_module("RPi.GPIO")
         self.GPIO.setwarnings(False)
         self.GPIO.setmode(self.GPIO.BOARD)
         self.GPIO.setup(pin, self.GPIO.OUT)
 
-    def read_state(self)->bool:
+    def read_state(self) -> bool:
         return self.GPIO.input(self.pin)
 
-    def set_state(self, state:bool)->None:
+    def set_state(self, state: bool) -> None:
         self.GPIO.output(self.pin, state)
 
 
 class MockLed:
     state = False
 
-    def read_state(self)->bool:
+    def read_state(self) -> bool:
         return self.state
 
-    def set_state(self, state:bool)->None:
+    def set_state(self, state: bool) -> None:
         self.state = state
 
 

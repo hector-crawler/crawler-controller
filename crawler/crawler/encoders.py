@@ -41,7 +41,7 @@ class EncodersNode(Node):
         self.right_encoder_publisher.publish(Int32(data=position))
 
 
-def Encoders(left_encoder_callback:Callable, right_encoder_callback:Callable):
+def Encoders(left_encoder_callback: Callable, right_encoder_callback: Callable):
     return (
         MockEncoders(left_encoder_callback, right_encoder_callback)
         if os.environ.get("CRAWLER_ENV") == "dev"
@@ -55,7 +55,9 @@ class PhysicalEncoders:
 
 
 class MockEncoders:
-    def __init__(self, left_encoder_callback: Callable, right_encoder_callback: Callable) -> None:
+    def __init__(
+        self, left_encoder_callback: Callable, right_encoder_callback: Callable
+    ) -> None:
         self.left_encoder_callback = left_encoder_callback
         self.right_encoder_callback = right_encoder_callback
 
