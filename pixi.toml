@@ -47,13 +47,20 @@ luma-core = ">=2.4.2, <3"
 luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
 gpiozero = ">=2.0.1"
+dynamixel-sdk = ">=3.7.31, <4"
 ## rpi-only ## "rpi-lgpio" = ">=0.0.6"
 
 [feature.dev.dependencies]
-ruff = "*"
-jedi-language-server = "*"
 python-lsp-server-base = "*"
 python-lsp-server = "*"
+pylsp-mypy = ">=0.6.6,<0.7"
+python-lsp-ruff = ">=2.2.2,<3"
+pyls-memestra = ">=0.0.16,<0.0.17"
+types-setuptools = ">=79.0.0.20250422,<80"
+types-flask = ">=1.1.6,<2"
+
+[feature.dev.pypi-dependencies]
+types-flask-cors = ">=5.0.0.20250413, <6"
 
 [environments]
 default = ["dev"]
