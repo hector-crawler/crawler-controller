@@ -11,7 +11,7 @@ export type ManualState = {
 
 export class API {
     private apiHost = import.meta.env.VITE_API_ROOT || window.location.host
-    public readonly isDev = import.meta.env.VITE_API_ROOT.includes("localhost")
+    public readonly isDev = import.meta.env.VITE_API_ROOT?.includes("localhost")
 
     // HTTP request utilities
 
