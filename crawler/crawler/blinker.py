@@ -2,14 +2,14 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty, Bool
-import importlib
+import gpiozero
 
 
 class Blinker(Node):
     def __init__(self) -> None:
         super().__init__("crawler_blinker")
 
-        self.declare_parameter("led_pin", 40)
+        self.declare_parameter("led_pin", 21)
         self.led_pin = self.get_parameter("led_pin").get_parameter_value().integer_value
 
         self.led = Led(self.led_pin)
@@ -44,17 +44,13 @@ def Led(led_pin: int):
 
 class PhysicalLed:
     def __init__(self, pin: int) -> None:
-        self.pin = pin
-        self.GPIO = importlib.import_module("RPi.GPIO")
-        self.GPIO.setwarnings(False)
-        self.GPIO.setmode(self.GPIO.BOARD)
-        self.GPIO.setup(pin, self.GPIO.OUT)
+        self.led = gpiozero.LED(pin)
 
     def read_state(self) -> bool:
-        return self.GPIO.input(self.pin)
+        return self.led.value == 1
 
     def set_state(self, state: bool) -> None:
-        self.GPIO.output(self.pin, state)
+        self.led.value = 1 if state else 0
 
 
 class MockLed:

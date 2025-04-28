@@ -29,6 +29,8 @@ as part of the build process and is served by the Flask server at runtime.
 on both the Raspberry Pi and your local development machine (It's essentially just
 `curl -fsSL https://pixi.sh/install.sh | sh`).
 
+You need to manually install the GPIO library [lgpio](https://abyz.me.uk/lg/download.html) globally on the Pi according to the instructions linked above, so the [rpi-lgpio](https://rpi-lgpio.readthedocs.io/) library can be installed.
+
 Your Raspberry Pi needs to be accessible via SSH.
 
 On your local development machine, run `pixi run upload --new` to configure your connection. 
