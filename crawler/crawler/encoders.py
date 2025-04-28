@@ -2,13 +2,23 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32
+import gpiozero
 
 
 class EncodersNode(Node):
     def __init__(self):
         super().__init__("crawler_encoders")
 
-        self.encoders = Encoders(self.publish_left_encoder, self.publish_right_encoder)
+        self.declare_parameter("left_encoder_pin_a", 20)
+        left_encoder_pin_a = self.get_parameter("left_encoder_pin_a").get_parameter_value().integer_value
+        self.declare_parameter("left_encoder_pin_b", 16)
+        left_encoder_pin_b = self.get_parameter("left_encoder_pin_b").get_parameter_value().integer_value
+        self.declare_parameter("right_encoder_pin_a", 27)
+        right_encoder_pin_a = self.get_parameter("right_encoder_pin_a").get_parameter_value().integer_value
+        self.declare_parameter("right_encoder_pin_b" , 17)
+        right_encoder_pin_b = self.get_parameter("right_encoder_pin_b").get_parameter_value().integer_value
+
+        self.encoders = Encoders(left_encoder_pin_a, left_encoder_pin_b, right_encoder_pin_a, right_encoder_pin_b, self.publish_left_encoder, self.publish_right_encoder)
 
         self.left_encoder_publisher = self.create_publisher(Int32, "/crawler/left_encoder/position", 5)
         self.right_encoder_publisher = self.create_publisher(Int32, "/crawler/right_encoder/position", 5)
@@ -26,14 +36,24 @@ class EncodersNode(Node):
         self.right_encoder_publisher.publish(Int32(data=position))
 
 
-def Encoders(left_encoder_callback, right_encoder_callback):
-    return MockEncoders(left_encoder_callback, right_encoder_callback) if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalEncoders()
+def Encoders(left_encoder_pin_a, left_encoder_pin_b, right_encoder_pin_a, right_encoder_pin_b, left_encoder_callback, right_encoder_callback):
+    return MockEncoders(left_encoder_callback, right_encoder_callback) if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalEncoders(left_encoder_pin_a, left_encoder_pin_b, right_encoder_pin_a, right_encoder_pin_b, left_encoder_callback, right_encoder_callback)
 
 
 class PhysicalEncoders():
-    def __init__(self):
-        raise NotImplementedError("Physical encoders not implemented yet")
+    def __init__(self, left_encoder_pin_a, left_encoder_pin_b, right_encoder_pin_a, right_encoder_pin_b, left_encoder_callback, right_encoder_callback):
+        PhysicalEncoder(left_encoder_pin_a, left_encoder_pin_b, left_encoder_callback)
+        PhysicalEncoder(right_encoder_pin_a, right_encoder_pin_b, right_encoder_callback)
 
+class PhysicalEncoder():
+    def __init__(self, pin_a, pin_b, callback):
+        self.pin_a = pin_a
+        self.pin_b = pin_b
+        self.callback = callback
+
+        self.encoder = gpiozero.RotaryEncoder(pin_a, pin_b, max_steps=0)
+        self.encoder.when_rotated = lambda: self.callback(self.encoder.steps)
+    
 
 class MockEncoders():
     def __init__(self, left_encoder_callback, right_encoder_callback):

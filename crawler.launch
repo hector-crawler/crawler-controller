@@ -3,14 +3,18 @@
     <node pkg="crawler" exec="crawler_web_api"></node>
 
     <node pkg="crawler" exec="crawler_blinker">
-        <param name="led_pin" value="40" />
+        <param name="led_pin" value="5" />
     </node>
 
     <node pkg="crawler" exec="crawler_motors"></node>
 
     <node pkg="crawler" exec="crawler_encoders">
-        <param name="left_encoder_pin_a" value="36" />
-        <param name="left_encoder_pin_a" value="38" />
+        <param name="left_encoder_pin_a" value="20" />
+        <param name="left_encoder_pin_b" value="16" />
+        <param name="right_encoder_pin_a" value="27" />
+        <param name="right_encoder_pin_b" value="17" />
     </node>
+
+    <!-- Raspberry Pi pinout: https://pinout.xyz/ -->
  
 </launch>

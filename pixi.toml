@@ -43,6 +43,8 @@ rpi-gpio = ">=0.7.1, <0.8"
 luma-core = ">=2.4.2, <3"
 luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
+gpiozero = ">=2.0.1"
+## rpi-only ## "rpi-lgpio" = ">=0.0.6"
 
 [feature.dev.dependencies]
 ruff = "*"

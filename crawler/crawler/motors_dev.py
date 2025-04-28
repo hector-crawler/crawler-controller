@@ -30,7 +30,8 @@ class MotorsNode(Node):
 
 
 def Motors():
-    return MockMotors() if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalMotors()
+    #return MockMotors() if os.environ.get("CRAWLER_ENV") == "dev" else PhysicalMotors()
+    return MockMotors()
 
 
 class PhysicalMotors():
