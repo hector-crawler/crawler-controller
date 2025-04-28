@@ -15,7 +15,10 @@ upload = "scripts/upload.sh"
 build-web = "scripts/build-and-install-web.sh"
 build-ros = "scripts/build-ros.sh"
 
-# launch ROS nodes
+# start on the Pi
+start-rpi = "scripts/start-rpi.sh"
+
+# launch ROS nodes directly
 launch = "ros2 launch crawler.launch" # all
 launch-web-api = "ros2 run crawler crawler_web_api"
 launch-blinker = "ros2 run crawler crawler_blinker"
