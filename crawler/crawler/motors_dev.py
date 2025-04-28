@@ -97,13 +97,11 @@ class PhysicalMotors:
         )
         if comm_result != dxl.COMM_SUCCESS:
             print(f"Failed to enable torque for {motor.name}")
-            dxl.error_pub.publish(f"Not able to properly enable motor {motor.id}")
         elif error != 0:
             print(
                 f"Error occurred while enabling torque for {motor.name}:",
                 self.packet_handler.getRxPacketError(error),
             )
-            dxl.error_pub.publish(f"Not able to properly enable motor {motor.id}")
         else:
             print(f"{motor.name} motor is now stiff (torque enabled).")
 
@@ -113,14 +111,10 @@ class PhysicalMotors:
         )
         if comm_result != dxl.COMM_SUCCESS:
             print(f"Failed to read position of {motor.name}")
-            dxl.error_pub.publish(f"Not able to read position of motor {motor.id}")
         elif error != 0:
             print(
                 f"Error occurred while reading position of motor {motor.name}",
                 self.packet_handler.getRxPacketError(error),
-            )
-            dxl.error_pub.publish(
-                f"Not able to properly read position of motor {motor.id}"
             )
         else:
             print(f"Got position {pos} from motor {motor.name}")
@@ -138,11 +132,9 @@ class PhysicalMotors:
         if comm_result != dxl.COMM_SUCCESS:
             msg = f"Failed to communicate with {motor.name}, result: {comm_result}"
             print(msg)
-            dxl.error_pub.publish(msg)
         elif error != 0:
             msg = f"Failed to move {motor.name}, error: {error}"
             print(msg)
-            dxl.error_pub.publish(msg)
         else:
             print(f"Moved {motor.name} by {step} to {desired_position}")
 
