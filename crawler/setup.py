@@ -22,7 +22,7 @@ setup(
         "console_scripts": [
             "crawler_web_api = crawler.web_api:main",
             "crawler_blinker = crawler.blinker:main",
-            "crawler_motors = crawler.motors_dev:main",
+            "crawler_motors = crawler.motors:main",
             "crawler_encoders = crawler.encoders:main",
         ],
     },
