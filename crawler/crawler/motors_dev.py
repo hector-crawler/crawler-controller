@@ -27,15 +27,15 @@ class MotorData:
 Arm = MotorData(
     "Arm",
     1,
-    1500,
-    2500,
+    600,
+    1200,
 )
 
 Hand = MotorData(
     "Hand",
-    2,
-    1000,
-    2000,
+    3,
+    1500,
+    2100,
 )
 
 
