@@ -40,6 +40,7 @@ ros-jazzy-desktop = ">=0.11.0,<0.12"
 colcon-common-extensions = ">=0.3.0,<0.4"
 setuptools = ">=78.1.0,<79"
 nodejs = ">=22.13.0,<22.14"
+pytorch = ">=2.6.0,<3"
 
 [pypi-dependencies]
 rpi-gpio = ">=0.7.1, <0.8"
