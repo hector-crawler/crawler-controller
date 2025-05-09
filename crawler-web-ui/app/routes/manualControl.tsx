@@ -28,8 +28,8 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
 
       {/* motors */}
       <div className="flex gap-6">
-        <MotorController onMove={async (factor) => await api.moveArm(factor * 250)} position={manualState.armPosition} />
-        <MotorController onMove={async (factor) => await api.moveHand(factor * 250)} position={manualState.handPosition} />
+        <MotorController onMove={async (factor) => await api.moveArm(factor * 250)} minPosition={600} maxPosition={1200} position={manualState.armPosition} />
+        <MotorController onMove={async (factor) => await api.moveHand(factor * 250)} minPosition={1500} maxPosition={2100} position={manualState.handPosition} />
       </div>
 
       {/* encoders */}
@@ -61,14 +61,20 @@ function BlinkerController({ onToggle, onOn, onOff, state }: { onToggle: () => v
   )
 }
 
-function MotorController({ onMove, position }: { onMove: (factor: number) => void, position: number }) {
-  if (isNaN(position)) position = 0;
+function MotorController({ onMove, position, minPosition, maxPosition }: { onMove: (factor: number) => void, position: number, minPosition: number, maxPosition: number }) {
+  const displayPosition = 
+      isNaN(position) ? (minPosition + (maxPosition - minPosition) / 2)
+    : position > maxPosition ? maxPosition
+    : position < minPosition ? minPosition
+    : position
+  const positionPercentage = (displayPosition - minPosition) / (maxPosition - minPosition)
+
   return (
     <div className="flex flex-col justify-center gap-3 border-blue-500 border-1 p-2 rounded-xl">
       <LargeButton onClick={() => onMove(1)} smallPadding={true}><UpIcon /></LargeButton>
       <div className="flex justify-center items-center h-30 relative">
         <div className="absolute left-50% bg-gray-700 w-1.5 h-30 rounded-full"></div>
-        <div className="absolute bg-gray-800 w-10 h-6 rounded-xl text-sm flex justify-center items-center top-0 transition-[top]" style={{ top: (100 - (isNaN(position) ? 0 : position)) / 100 * (26 * 4) }}>{position}</div>
+        <div className="absolute bg-gray-800 w-10 h-6 rounded-xl text-sm flex justify-center items-center top-0 transition-[top]" style={{ top: (1-positionPercentage)*(26*4) }}>{!isNaN(position) ? position : ""}</div>
       </div>
       <LargeButton onClick={() => onMove(-1)} smallPadding={true}><DownIcon /></LargeButton>
     </div >
@@ -79,7 +85,7 @@ function EncodersController({ position }: { position: number }) {
   return (
     <div className="rounded-full border-blue-500 border-1 size-25 flex justify-center items-center relative">
       <div className="absolute size-full flex justify-center items-center">
-        <div className="bg-gray-800 p-0.5 w-10 h-6 rounded-xl text-sm flex justify-center items-center">{position}</div>
+        <div className="bg-gray-800 p-0.5 w-10 h-6 rounded-xl text-sm flex justify-center items-center">{!isNaN(position) ? position : ""}</div>
       </div>
       <div className="absolute size-19 border-gray-700 border-5 rounded-full transition-[transform]" style={{transform: `rotate(${position}deg)`}}>
         <div className="absolute translate-x-[calc(var(--spacing)*7.3)] -translate-y-2 w-2 h-4 bg-blue-500 rounded-xl"></div>

@@ -67,7 +67,7 @@ export class API {
     }
 
     useManualState() {
-        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: 0, handPosition: 0, leftEncoderPosition: 0, rightEncoderPosition: 0 });
+        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: NaN, handPosition: NaN, leftEncoderPosition: NaN, rightEncoderPosition: NaN });
         const { lastMessage } = useWebSocket(`ws://${this.apiHost}/api/manual/state`);
         useEffect(() => {
             if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
