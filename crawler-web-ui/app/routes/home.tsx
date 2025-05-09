@@ -16,8 +16,7 @@ export default function Home() {
         <p>There are different controls and visualizations available:</p>
         <div className="h-1"></div>
         <Link to="/manual-control" className="text-blue-500 hover:text-blue-400 transition"> -&gt; Manual Control</Link>
-        <Link to="/manual-control" className="text-blue-500 hover:text-blue-400 transition"> -&gt; Automatic Control</Link>
-        <Link to="/manual-control" className="text-blue-500 hover:text-blue-400 transition"> -&gt; Visualization</Link>
+        <Link to="/rl-control" className="text-blue-500 hover:text-blue-400 transition"> -&gt; RL Control</Link>
         <div className="h-3"></div>
         <p>Check out the full source code on GitHub:</p>
         <div className="h-1"></div>

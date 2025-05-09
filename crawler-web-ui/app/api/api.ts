@@ -74,4 +74,12 @@ export class API {
         }, [lastMessage]);
         return state;
     }
+
+    startRL() {
+        return this.post("/api/rl/start");
+    }
+
+    stopRL() {
+        return this.post("/api/rl/stop");
+    }
 }

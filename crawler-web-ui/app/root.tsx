@@ -53,8 +53,12 @@ function TopNavigation() {
       path: "/",
     },
     {
-      title: "Manual Control",
+      title: "Manual",
       path: "/manual-control",
+    },
+    {
+      title: "RL",
+      path: "/rl-control",
     },
   ] satisfies { title: string, path: string }[];
 
