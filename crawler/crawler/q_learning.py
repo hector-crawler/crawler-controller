@@ -12,6 +12,9 @@ from crawler_msgs.msg import StateReward
 from .action import Action
 from .motors import Arm, Hand
 
+ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
+HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
+
 
 class Move(Enum):
     ARM_UP = 1
@@ -45,27 +48,27 @@ class QLearningNode(Node):
         # Parameters regarding the Q-Learning
         self.declare_parameter("learning_rate", 0.5)
         self.learning_rate = (
-            self.get_parameter("learning_rate").get_parameter_value().integer_value
+            self.get_parameter("learning_rate").get_parameter_value().double_value
         )
         self.declare_parameter("explor_rate", 1.0)
         self.explor_rate = (
-            self.get_parameter("explor_rate").get_parameter_value().integer_value
+            self.get_parameter("explor_rate").get_parameter_value().double_value
         )
         self.declare_parameter("explor_decay_rate", 0.05)
         self.explor_decay_rate = (
-            self.get_parameter("explor_decay_rate").get_parameter_value().integer_value
+            self.get_parameter("explor_decay_rate").get_parameter_value().double_value
         )
         self.declare_parameter("max_explor_rate", 0.5)
         self.max_explor_rate = (
-            self.get_parameter("max_explor_rate").get_parameter_value().integer_value
+            self.get_parameter("max_explor_rate").get_parameter_value().double_value
         )
         self.declare_parameter("min_explor_rate", 0.01)
         self.min_explor_rate = (
-            self.get_parameter("min_explor_rate").get_parameter_value().integer_value
+            self.get_parameter("min_explor_rate").get_parameter_value().double_value
         )
         self.declare_parameter("discount_factor", 0.99)
         self.discount_factor = (
-            self.get_parameter("discount_factor").get_parameter_value().integer_value
+            self.get_parameter("discount_factor").get_parameter_value().double_value
         )
 
         queue_len = 5
@@ -113,23 +116,19 @@ Q-learning parameters:
     No. of Moves = {self.moves_count}
 
     Exploration rate = {self.explor_rate}
-    Exploration decay rate = {self.explor_rate}
+    Exploration decay rate = {self.explor_decay_rate}
     Min exploration rate = {self.min_explor_rate}
     Max exploration rate = {self.max_explor_rate}
 """
         )
 
-        self.create_publisher(Empty, "/crawler/rl/start/", queue_len).publish(
-            "We send this message simply to tell other nodes the Q-Learning is ready to go."
-        )
+        self.create_publisher(Empty, "/crawler/rl/start/", queue_len).publish(Empty())
 
     def set_arm_pos(self, msg) -> None:
-        motor_range = Arm.max_limit - Arm.min_limit
-        self.curr_arm_state = int(msg.data * self.arm_states / motor_range)
+        self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
 
     def set_hand_pos(self, msg) -> None:
-        motor_range = Hand.max_limit - Hand.min_limit
-        self.curr_hand_state = int(msg.data * self.hand_states / motor_range)
+        self.curr_hand_state = int(msg.data * self.hand_states / HAND_MOTOR_RANGE)
 
     def send_move(self, m: Move) -> None:
         match m:
@@ -145,25 +144,24 @@ Q-learning parameters:
     def pick_move(self) -> Move:
         if rand.uniform(0, 1) < self.explor_rate:
             something_new = rand.choice(list(Move))
-            self.last_move = something_new
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
         move = max(pool)
-        self.last_move = move
         return move
 
     def get_reward(self, msg) -> None:
         reward = msg.data
         self.learn(reward)
         m = self.pick_move()
+        self.last_move = m
         self.send_move(m)
 
     def learn(self, rw: StateReward) -> None:
         predicted_value = self.q_table[
             self.last_arm_state, self.last_hand_state, self.last_move
         ]
-        target_value = rw + self.discount_factor * torch.max(
+        target_value = rw + self.discount_factor * torch.argmax(
             self.q_table[self.curr_arm_state, self.curr_hand_state]
         )
         self.q_table[self.last_arm_state, self.last_hand_state, self.last_move] = (
