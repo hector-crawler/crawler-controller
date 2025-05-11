@@ -24,6 +24,8 @@ setup(
             "crawler_blinker = crawler.blinker:main",
             "crawler_motors = crawler.motors:main",
             "crawler_encoders = crawler.encoders:main",
+            "crawler_rl_environment = crawler.rl_environment:main",
+            "crawler_q_learning = crawler.q_learning:main",
         ],
     },
 )

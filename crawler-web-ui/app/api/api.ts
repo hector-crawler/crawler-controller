@@ -75,8 +75,8 @@ export class API {
         return state;
     }
 
-    startRL() {
-        return this.post("/api/rl/start");
+    startRLQLearning(paramA: number, paramB: number) {
+        return this.post("/api/rl/start/q_learning", { paramA, paramB });
     }
 
     stopRL() {

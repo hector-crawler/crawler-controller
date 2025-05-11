@@ -34,13 +34,13 @@ class EncodersNode(Node):
         self.create_subscription(
             Int32,
             "/crawler/left_encoder/mock",
-            lambda msg: self.encoders.mock_left_encoder_position(msg.data),
+            lambda msg: self.encoders.mock_left_encoder_position(msg.data), # type: ignore
             queue_len,
         )
         self.create_subscription(
             Int32,
             "/crawler/right_encoder/mock",
-            lambda msg: self.encoders.mock_right_encoder_position(msg.data),
+            lambda msg: self.encoders.mock_right_encoder_position(msg.data), # type: ignore
             queue_len,
         )
 

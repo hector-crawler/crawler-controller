@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import subprocess
 from flask import Flask, send_file, request
 from flask_cors import CORS
 from flask_sock import Sock
@@ -13,6 +14,87 @@ from rclpy.node import Node
 from std_msgs.msg import Empty, Bool, Int32
 
 
+# ROS nodes
+
+class WebApiPublisher(Node):
+    def __init__(self):
+        super().__init__("crawler_web_api_publisher")
+
+        self.blinker_toggle_publisher = self.create_publisher(
+            Empty, "/crawler/blinker/toggle", 5
+        )
+        self.blinker_write_publisher = self.create_publisher(
+            Bool, "/crawler/blinker/write", 5
+        )
+        self.arm_move_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
+        self.hand_move_publisher = self.create_publisher(Int32, "/crawler/hand/move", 5)
+        self.left_encoder_mock_publisher = self.create_publisher(
+            Int32, "/crawler/left_encoder/mock", 5
+        )
+        self.right_encoder_mock_publisher = self.create_publisher(
+            Int32, "/crawler/right_encoder/mock", 5
+        )
+        self.rl_stop_publisher = self.create_publisher(Empty, "/crawler/rl/stop", 5)
+
+    def blinker_toggle(self):
+        self.blinker_toggle_publisher.publish(Empty())
+
+    def blinker_write(self, state):
+        self.blinker_write_publisher.publish(Bool(data=state))
+
+    def arm_move(self, step):
+        self.arm_move_publisher.publish(Int32(data=step))
+
+    def hand_move(self, step):
+        self.hand_move_publisher.publish(Int32(data=step))
+
+    def left_encoder_mock(self, position):
+        self.left_encoder_mock_publisher.publish(Int32(data=position))
+
+    def right_encoder_mock(self, position):
+        self.right_encoder_mock_publisher.publish(Int32(data=position))
+
+    def start_rl_q_learning(self, paramA: int, paramB: int):
+        subprocess.Popen(f"ros2 run crawler crawler_q_learning --ros-args -p paramA:={paramA} -p paramB:={paramB}", shell=True)
+        self.get_logger().info(f"Starting Q-learning with params: {paramA}, {paramB}")
+
+    def stop_rl(self):
+        self.rl_stop_publisher.publish(Empty())
+        self.get_logger().info(f"Stopping RL")
+
+
+class WebApiSubscriber(Node):
+    def __init__(self):
+        super().__init__("crawler_web_api_subscriber")
+
+        self.create_subscription(Bool, "/crawler/blinker/state", self.blinker_state, 5)
+        self.create_subscription(Int32, "/crawler/arm/position", self.arm_position, 5)
+        self.create_subscription(Int32, "/crawler/hand/position", self.hand_position, 5)
+        self.create_subscription(
+            Int32, "/crawler/left_encoder/position", self.left_encoder_position, 5
+        )
+        self.create_subscription(
+            Int32, "/crawler/right_encoder/position", self.right_encoder_position, 5
+        )
+
+    def blinker_state(self, msg):
+        ws_blinker_state.update_state({"blinker": msg.data})
+
+    def arm_position(self, msg):
+        ws_blinker_state.update_state({"armPosition": msg.data})
+
+    def hand_position(self, msg):
+        ws_blinker_state.update_state({"handPosition": msg.data})
+
+    def left_encoder_position(self, msg):
+        ws_blinker_state.update_state({"leftEncoderPosition": msg.data})
+
+    def right_encoder_position(self, msg):
+        ws_blinker_state.update_state({"rightEncoderPosition": msg.data})
+
+
+# web server
+
 app = Flask(__name__)
 CORS(app)
 sock = Sock(app)
@@ -21,8 +103,8 @@ sock = Sock(app)
 logger = logging.getLogger("werkzeug")
 logger.setLevel(logging.WARN)
 
-publisher = None
-subscriber = None
+publisher: WebApiPublisher = None # type: ignore
+subscriber: WebApiSubscriber = None # type: ignore
 
 
 def main(args=None):
@@ -106,16 +188,16 @@ def api_mock_right_encoder():
     publisher.right_encoder_mock(position)
     return "ok"
 
-@app.route("/api/rl/start", methods=["POST"])
+@app.route("/api/rl/start/q_learning", methods=["POST"])
 def api_rl_start():
-    #todo: implement
-    # starts a rl node (probably needs some configuration from request body)
+    paramA = request.json.get("paramA")
+    paramB = request.json.get("paramB")
+    publisher.start_rl_q_learning(paramA, paramB)
     return "ok"
 
 @app.route("/api/rl/stop", methods=["POST"])
 def api_rl_stop():
-    #todo: implement
-    # stops the rl node
+    publisher.stop_rl()
     return "ok"
 
 
@@ -155,72 +237,3 @@ def api_blinker_state(ws):
     ws_blinker_state.handle_connection(ws)
 
 
-# ROS publisher
-
-
-class WebApiPublisher(Node):
-    def __init__(self):
-        super().__init__("crawler_web_api_publisher")
-
-        self.blinker_toggle_publisher = self.create_publisher(
-            Empty, "/crawler/blinker/toggle", 5
-        )
-        self.blinker_write_publisher = self.create_publisher(
-            Bool, "/crawler/blinker/write", 5
-        )
-        self.arm_move_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
-        self.hand_move_publisher = self.create_publisher(Int32, "/crawler/hand/move", 5)
-        self.left_encoder_mock_publisher = self.create_publisher(
-            Int32, "/crawler/left_encoder/mock", 5
-        )
-        self.right_encoder_mock_publisher = self.create_publisher(
-            Int32, "/crawler/right_encoder/mock", 5
-        )
-
-    def blinker_toggle(self):
-        self.blinker_toggle_publisher.publish(Empty())
-
-    def blinker_write(self, state):
-        self.blinker_write_publisher.publish(Bool(data=state))
-
-    def arm_move(self, step):
-        self.arm_move_publisher.publish(Int32(data=step))
-
-    def hand_move(self, step):
-        self.hand_move_publisher.publish(Int32(data=step))
-
-    def left_encoder_mock(self, position):
-        self.left_encoder_mock_publisher.publish(Int32(data=position))
-
-    def right_encoder_mock(self, position):
-        self.right_encoder_mock_publisher.publish(Int32(data=position))
-
-
-class WebApiSubscriber(Node):
-    def __init__(self):
-        super().__init__("crawler_web_api_subscriber")
-
-        self.create_subscription(Bool, "/crawler/blinker/state", self.blinker_state, 5)
-        self.create_subscription(Int32, "/crawler/arm/position", self.arm_position, 5)
-        self.create_subscription(Int32, "/crawler/hand/position", self.hand_position, 5)
-        self.create_subscription(
-            Int32, "/crawler/left_encoder/position", self.left_encoder_position, 5
-        )
-        self.create_subscription(
-            Int32, "/crawler/right_encoder/position", self.right_encoder_position, 5
-        )
-
-    def blinker_state(self, msg):
-        ws_blinker_state.update_state({"blinker": msg.data})
-
-    def arm_position(self, msg):
-        ws_blinker_state.update_state({"armPosition": msg.data})
-
-    def hand_position(self, msg):
-        ws_blinker_state.update_state({"handPosition": msg.data})
-
-    def left_encoder_position(self, msg):
-        ws_blinker_state.update_state({"leftEncoderPosition": msg.data})
-
-    def right_encoder_position(self, msg):
-        ws_blinker_state.update_state({"rightEncoderPosition": msg.data})
