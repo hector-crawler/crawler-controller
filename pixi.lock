@@ -792,6 +792,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/85/9f/2235ba9001e3c29fc342eeb222104420bcb7bac51555f0c034376a744075/smbus2-0.5.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c7/d9/401c0a7be089e02826cf2c201f489876b601f15be100fe391ef9c2faed83/spidev-3.6.tar.gz
       - pypi: https://files.pythonhosted.org/packages/66/34/7d64eb72d80bfd5b9e6dd31e7fe351a1c9a735f5c01e85b1d3b903a9d656/types_flask_cors-5.0.0.20250413-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/07/f0/47fadeb4fabe8193932934b272a5ce5c9dfc18b2f44cdd6ba680e1a7d6c3/types_torch-0.1.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/58/e860788190eba3bcce367f74d29c4675466ce8dddfba85f7827588416f01/wsproto-1.2.0-py3-none-any.whl
       linux-aarch64:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/_openmp_mutex-4.5-2_gnu.tar.bz2
@@ -1569,6 +1570,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/85/9f/2235ba9001e3c29fc342eeb222104420bcb7bac51555f0c034376a744075/smbus2-0.5.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c7/d9/401c0a7be089e02826cf2c201f489876b601f15be100fe391ef9c2faed83/spidev-3.6.tar.gz
       - pypi: https://files.pythonhosted.org/packages/66/34/7d64eb72d80bfd5b9e6dd31e7fe351a1c9a735f5c01e85b1d3b903a9d656/types_flask_cors-5.0.0.20250413-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/07/f0/47fadeb4fabe8193932934b272a5ce5c9dfc18b2f44cdd6ba680e1a7d6c3/types_torch-0.1.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/58/e860788190eba3bcce367f74d29c4675466ce8dddfba85f7827588416f01/wsproto-1.2.0-py3-none-any.whl
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
@@ -23781,6 +23783,10 @@ packages:
   - pkg:pypi/types-setuptools?source=hash-mapping
   size: 49841
   timestamp: 1745360327517
+- pypi: https://files.pythonhosted.org/packages/07/f0/47fadeb4fabe8193932934b272a5ce5c9dfc18b2f44cdd6ba680e1a7d6c3/types_torch-0.1.1-py3-none-any.whl
+  name: types-torch
+  version: 0.1.1
+  sha256: 40326cb077c041279090257b1529d1705a3e0018a395fd52bb19d9d68a1af363
 - conda: https://conda.anaconda.org/conda-forge/noarch/types-werkzeug-1.0.9-pyhd8ed1ab_1.conda
   sha256: 231cdedd15073cebfbc579633c162e0be5151e90f0e7d66a29dab282796a8f69
   md5: 503a402917e1a610d6067d7f76906a30
