@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from crawler_msgs.msg import StateReward, Action # type: ignore
+from crawler_msgs.msg import StateReward  # type: ignore
+from .action import Action
 from std_msgs.msg import Empty, Int32
 
 
