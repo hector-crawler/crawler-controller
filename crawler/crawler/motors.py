@@ -149,15 +149,15 @@ class PhysicalMotors:
 
 class MockMotors:
     def __init__(self) -> None:
-        self.hand_position = 50
-        self.arm_position = 50
+        self.hand_position = 1000
+        self.arm_position = 1000
 
     def move_arm(self, step: int) -> int:
-        self.arm_position = max(0, min(100, self.arm_position + step))
+        self.arm_position = max(600, min(1200, self.arm_position + step))
         return self.arm_position
 
     def move_hand(self, step: int) -> int:
-        self.hand_position = max(0, min(100, self.hand_position + step))
+        self.hand_position = max(1500, min(2100, self.hand_position + step))
         return self.hand_position
 
 

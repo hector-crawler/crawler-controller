@@ -106,6 +106,18 @@ def api_mock_right_encoder():
     publisher.right_encoder_mock(position)
     return "ok"
 
+@app.route("/api/rl/start", methods=["POST"])
+def api_rl_start():
+    #todo: implement
+    # starts a rl node (probably needs some configuration from request body)
+    return "ok"
+
+@app.route("/api/rl/stop", methods=["POST"])
+def api_rl_stop():
+    #todo: implement
+    # stops the rl node
+    return "ok"
+
 
 class WebSocketStateBroadcast:
     def __init__(self, initial_state):
