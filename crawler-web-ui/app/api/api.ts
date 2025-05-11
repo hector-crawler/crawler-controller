@@ -9,6 +9,14 @@ export type ManualState = {
     rightEncoderPosition: number,
 }
 
+export type RLInternals = {
+    qLearning: null | {
+        paramA: number,
+        paramB: number,
+        timestamp: string,
+    }
+}
+
 export class API {
     private apiHost = import.meta.env.VITE_API_ROOT || window.location.host
     public readonly isDev = import.meta.env.VITE_API_ROOT?.includes("localhost")
@@ -34,6 +42,16 @@ export class API {
                 .then(response => response.text().then(text => resolve(text)))
                 .catch(() => reject());
         });
+    }
+
+    private ws<T>(path: string, defaultValue: T) {
+        if (!path.startsWith("/")) path = "/" + path;
+        const [state, setState] = useState<T>(defaultValue);
+        const { lastMessage } = useWebSocket(`ws://${this.apiHost}${path}`)
+        useEffect(() => {
+            if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
+        }, [lastMessage]);
+        return state;
     }
 
     // API
@@ -67,19 +85,18 @@ export class API {
     }
 
     useManualState() {
-        const [state, setState] = useState<ManualState>({ blinker: false, armPosition: NaN, handPosition: NaN, leftEncoderPosition: NaN, rightEncoderPosition: NaN });
-        const { lastMessage } = useWebSocket(`ws://${this.apiHost}/api/manual/state`);
-        useEffect(() => {
-            if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
-        }, [lastMessage]);
-        return state;
+        return this.ws("/api/manual/state", { blinker: false, armPosition: NaN, handPosition: NaN, leftEncoderPosition: NaN, rightEncoderPosition: NaN } as ManualState);
     }
 
     startRLQLearning(paramA: number, paramB: number) {
-        return this.post("/api/rl/start/q_learning", { paramA, paramB });
+        return this.post("/api/rl/start/qLearning", { paramA, paramB });
     }
 
     stopRL() {
         return this.post("/api/rl/stop");
+    }
+
+    useRLInternals() {
+        return this.ws("/api/rl/internals", { qLearning: null } as RLInternals);
     }
 }

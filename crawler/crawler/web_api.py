@@ -12,6 +12,7 @@ from threading import Thread
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty, Bool, Int32
+from crawler_msgs.msg import QLearningInternalState  # type: ignore
 
 
 # ROS nodes
@@ -55,11 +56,12 @@ class WebApiPublisher(Node):
         self.right_encoder_mock_publisher.publish(Int32(data=position))
 
     def start_rl_q_learning(self, paramA: int, paramB: int):
-        subprocess.Popen(f"ros2 run crawler crawler_q_learning --ros-args -p paramA:={paramA} -p paramB:={paramB}", shell=True)
+        subprocess.Popen(f"ros2 run crawler crawler_q_learning --ros-args -p param_a:={paramA} -p param_b:={paramB}", shell=True)
         self.get_logger().info(f"Starting Q-learning with params: {paramA}, {paramB}")
 
     def stop_rl(self):
         self.rl_stop_publisher.publish(Empty())
+        ws_rl_internals.update_state({"qLearning": None})
         self.get_logger().info(f"Stopping RL")
 
 
@@ -76,21 +78,33 @@ class WebApiSubscriber(Node):
         self.create_subscription(
             Int32, "/crawler/right_encoder/position", self.right_encoder_position, 5
         )
+        self.create_subscription(QLearningInternalState, "/crawler/rl/q_learning/internals", self.rl_q_learning_internals, 5)
 
     def blinker_state(self, msg):
-        ws_blinker_state.update_state({"blinker": msg.data})
+        ws_manual_state.update_state({"blinker": msg.data})
 
     def arm_position(self, msg):
-        ws_blinker_state.update_state({"armPosition": msg.data})
+        ws_manual_state.update_state({"armPosition": msg.data})
 
     def hand_position(self, msg):
-        ws_blinker_state.update_state({"handPosition": msg.data})
+        ws_manual_state.update_state({"handPosition": msg.data})
 
     def left_encoder_position(self, msg):
-        ws_blinker_state.update_state({"leftEncoderPosition": msg.data})
+        ws_manual_state.update_state({"leftEncoderPosition": msg.data})
 
     def right_encoder_position(self, msg):
-        ws_blinker_state.update_state({"rightEncoderPosition": msg.data})
+        ws_manual_state.update_state({"rightEncoderPosition": msg.data})
+
+    def rl_q_learning_internals(self, msg):
+        ws_rl_internals.update_state(
+            {
+                "qLearning": {
+                    "paramA": msg.param_a,
+                    "paramB": msg.param_b,
+                    "timestamp": msg.timestamp,
+                }
+            }
+        )
 
 
 # web server
@@ -188,7 +202,7 @@ def api_mock_right_encoder():
     publisher.right_encoder_mock(position)
     return "ok"
 
-@app.route("/api/rl/start/q_learning", methods=["POST"])
+@app.route("/api/rl/start/qLearning", methods=["POST"])
 def api_rl_start():
     paramA = request.json.get("paramA")
     paramB = request.json.get("paramB")
@@ -221,7 +235,7 @@ class WebSocketStateBroadcast:
             ws.send(json.dumps(self.state))
 
 
-ws_blinker_state = WebSocketStateBroadcast(
+ws_manual_state = WebSocketStateBroadcast(
     {
         "blinker": False,
         "armPosition": 50,
@@ -231,9 +245,21 @@ ws_blinker_state = WebSocketStateBroadcast(
     }
 )
 
+ws_rl_internals = WebSocketStateBroadcast(
+    {
+        "qLearning": {
+            "paramA": 0,
+            "paramB": 0,
+            "timestamp": "",
+        }
+    }
+)
+
 
 @sock.route("/api/manual/state")
 def api_blinker_state(ws):
-    ws_blinker_state.handle_connection(ws)
+    ws_manual_state.handle_connection(ws)
 
-
+@sock.route("/api/rl/internals")
+def api_rl_internals(ws):
+    ws_rl_internals.handle_connection(ws)

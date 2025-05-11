@@ -11,6 +11,7 @@ export function meta({ }: Route.MetaArgs) {
 
 export default function RLControl({ loaderData }: { loaderData: Route.LoaderArgs }) {
   const api = new API();
+  const rlInternals = api.useRLInternals();
 
   const [paramA, setParamA] = useState(0);
   const [paramB, setParamB] = useState(0);
@@ -51,7 +52,11 @@ export default function RLControl({ loaderData }: { loaderData: Route.LoaderArgs
         <div className="flex flex-col items-center p-4 gap-4 border-blue-500 border-1 rounded-xl">
           <div className="p-0">Q-learning state</div>
 
-          <span className="text-gray-500">( internal state of the RL algorithm )</span>
+          <div className="text-gray-500">
+            {rlInternals.qLearning?.paramA}<br></br>
+            {rlInternals.qLearning?.paramB}<br></br>
+            {rlInternals.qLearning?.timestamp}
+          </div>
         </div>
 
       </div>

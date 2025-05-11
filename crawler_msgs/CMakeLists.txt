@@ -28,6 +28,7 @@ endif()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/StateReward.msg"
   "msg/Action.msg"
+  "msg/QLearningInternalState.msg"
   # DEPENDENCIES std_msgs  # Uncomment if using types from other packages
 )
 
