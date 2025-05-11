@@ -1,8 +1,11 @@
 import rclpy
 from rclpy.node import Node
-from crawler_msgs.msg import StateReward  # type: ignore
-from .action import Action
+from crawler_msgs.msg import StateReward, Action  # type: ignore
+#from .action import Action
 from std_msgs.msg import Empty, Int32
+
+# todo: name conflict with action.Action and crawler_msgs.msg.Action
+# the ROS2 msg needs to be imported (not for types, but for the API)
 
 
 class RLEnvironmentNode(Node):
@@ -11,7 +14,7 @@ class RLEnvironmentNode(Node):
 
         # handle /crawler/rl/state_reward, /crawler/rl/action
         self.state_reward_publisher = self.create_publisher(StateReward, "/crawler/rl/state_reward", 5)
-        self.create_subscription(Action, "/crawler/rl/action", lambda msg : [msg.move_hand, msg.move_arm], 5) # type: ignore
+        self.create_subscription(Action, "/crawler/rl/action", lambda msg : self.execute_action(msg.move_arm, msg.move_hand), 5) # type: ignore
 
         # observe environment (arm, hand, encoders)
         self.arm_position = 0
@@ -30,11 +33,10 @@ class RLEnvironmentNode(Node):
         self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
         self.hand_publisher = self.create_publisher(Int32, "/crawler/hand/move", 5)
 
-        # start RL
+        # handle /crawler/rl/start, /crawler/rl/stop
         self.create_subscription(Empty, "/crawler/rl/start", self.start_rl, 5)
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop_rl, 5)
 
-        # todo: perform RL cycle
     
     def update_arm_position(self, position: int) -> None:
         self.arm_position = position
@@ -47,11 +49,13 @@ class RLEnvironmentNode(Node):
     
     def update_right_encoder_position(self, position: int) -> None:
         self.right_encoder_position = position
-
-    def execute_action(self, move_arm: int, move_hand: int) -> None:
-        self.arm_publisher.publish(Int32(data=move_arm))
-        self.hand_publisher.publish(Int32(data=move_hand))
-        self.get_logger().info(f"Executed action: move_arm={move_arm}, move_hand={move_hand}")
+    
+    # RL loop:
+    # - receive at /crawler/rl/start from algorithm node
+    # - send first state to /crawler/rl/state_reward
+    # - repeat until stopped via /crawler/rl/stop:
+    #   - receive action at /crawler/rl/action and execute it
+    #   - send next state and reward to /crawler/rl/state_reward
 
     def publish_state_reward(self) -> None:
         msg = StateReward()
@@ -69,8 +73,25 @@ class RLEnvironmentNode(Node):
         return reward
     
     def start_rl(self, _) -> None:
+        if self.rl_running:
+            raise Exception("Attempted to start RL, but it is already running!")
         self.rl_running = True
         self.get_logger().info(f"Starting RL")
+
+        # send first state
+        self.publish_state_reward()
+
+    def execute_action(self, move_arm: int, move_hand: int) -> None:
+        if not self.rl_running:
+            self.get_logger().info("Attempted to execute action, but RL is not running!")
+            return
+        
+        self.arm_publisher.publish(Int32(data=move_arm))
+        self.hand_publisher.publish(Int32(data=move_hand))
+        self.get_logger().info(f"Executed action: move_arm={move_arm}, move_hand={move_hand}")
+
+        # send next state
+        self.publish_state_reward()
 
     def stop_rl(self, _) -> None:
         self.rl_running = False
