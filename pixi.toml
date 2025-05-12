@@ -48,7 +48,6 @@ luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
 gpiozero = ">=2.0.1"
 dynamixel-sdk = ">=3.7.31, <4"
-types-torch = ">=0.1.1, <0.2"
 ## rpi-only ## "rpi-lgpio" = ">=0.0.6"
 
 [feature.dev.dependencies]
@@ -62,6 +61,7 @@ types-flask = ">=1.1.6,<2"
 
 [feature.dev.pypi-dependencies]
 types-flask-cors = ">=5.0.0.20250413, <6"
+types-torch = ">=0.1.1, <0.2"
 
 [environments]
 default = ["dev"]
