@@ -4,13 +4,13 @@ from enum import Enum
 
 import rclpy
 import torch
-from crawler_msgs.msg import (
+from crawler_msgs.msg import (  # type: ignore
     Action,
-    QLearningInternalState,  # type: ignore
+    QLearningInternalState,
     StateReward,
 )
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32
+from std_msgs.msg import Empty, Int32 
 
 from .motors import Arm, Hand
 
