@@ -1,6 +1,5 @@
 import datetime
 import random as rand
-from enum import Enum
 
 import rclpy
 import torch
@@ -10,19 +9,13 @@ from crawler_msgs.msg import (  # type: ignore
     StateReward,
 )
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32 
+from std_msgs.msg import Empty, Int32
 
 from .motors import Arm, Hand
+from .move import Move
 
 ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
 HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
-
-
-class Move(Enum):
-    ARM_UP = 1
-    ARM_DOWN = 2
-    HAND_UP = 3
-    HAND_DOWN = 4
 
 
 class QLearningNode(Node):
@@ -154,11 +147,9 @@ Q-learning parameters:
         return move
 
     def get_reward(self, msg) -> None:
-        reward = msg.data
-        self.learn(reward)
-        m = self.pick_move()
-        self.last_move = m
-        self.send_move(m)
+        self.learn(msg.data)
+        self.last_move = self.pick_move()
+        self.send_move(self.last_move)
 
     def learn(self, rw: StateReward) -> None:
         idx = [
