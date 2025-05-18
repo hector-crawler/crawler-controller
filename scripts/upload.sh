@@ -38,5 +38,5 @@ if [[ $1 == "--build-web" || $2 == "--build-web" ]]; then
 fi
 
 # upload source files
-rsync -r . --exclude={.git,.pixi,upload-env.sh,build,install,log,**node_modules,**__pycache__} \
+rsync -r . --exclude={.git,.pixi,upload-env.sh,build,install,log,**node_modules,**__pycache__,.jj} \
     -e "ssh -p $SSH_PORT" -- $SSH_USERNAME@$SSH_HOSTADDRESS:$UPLOAD_PATH

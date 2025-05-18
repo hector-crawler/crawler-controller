@@ -11,10 +11,33 @@ export type ManualState = {
 
 export type RLInternals = {
     qLearning: null | {
-        paramA: number,
-        paramB: number,
-        timestamp: string,
+        armStates: number,
+        handStates: number,
+        armStep: number,
+        handStep: number,
+        learningRate: number,
+        explorationRate: number,
+        explorationDecayRate: number,
+        maxExplorationRate: number,
+        minExplorationRate: number,
+        discountFactor: number,
+        qTableCols: string[],
+        qTableRows: string[],
+        qTableValues: number[],
     }
+}
+
+export type QLearningConfiguration = {
+    armStates: number,
+    handStates: number,
+    armStep: number,
+    handStep: number,
+    learningRate: number,
+    explorationRate: number,
+    explorationDecayRate: number,
+    maxExplorationRate: number,
+    minExplorationRate: number,
+    discountFactor: number,
 }
 
 export class API {
@@ -88,8 +111,8 @@ export class API {
         return this.ws("/api/manual/state", { blinker: false, armPosition: NaN, handPosition: NaN, leftEncoderPosition: NaN, rightEncoderPosition: NaN } as ManualState);
     }
 
-    startRLQLearning(paramA: number, paramB: number) {
-        return this.post("/api/rl/start/qLearning", { paramA, paramB });
+    startRLQLearning(configuration: QLearningConfiguration) {
+        return this.post("/api/rl/start/qLearning", configuration);
     }
 
     stopRL() {

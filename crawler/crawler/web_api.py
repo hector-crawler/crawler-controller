@@ -10,6 +10,7 @@ import logging
 from threading import Thread
 
 import rclpy
+import rclpy.logging
 from rclpy.node import Node
 from std_msgs.msg import Empty, Bool, Int32
 from crawler_msgs.msg import QLearningInternalState  # type: ignore
@@ -55,9 +56,20 @@ class WebApiPublisher(Node):
     def right_encoder_mock(self, position):
         self.right_encoder_mock_publisher.publish(Int32(data=position))
 
-    def start_rl_q_learning(self, paramA: int, paramB: int):
-        subprocess.Popen(f"ros2 run crawler crawler_q_learning --ros-args -p param_a:={paramA} -p param_b:={paramB}", shell=True)
-        self.get_logger().info(f"Starting Q-learning with params: {paramA}, {paramB}")
+    def start_rl_q_learning(self, hand_states: int, arm_states: int, learning_rate: float, explor_rate: float, explor_decay_rate: float, max_explor_rate: float, min_explor_rate: float, discount_factor: float):
+        subprocess.Popen(
+            f"ros2 run crawler crawler_q_learning --ros-args "
+            f"-p hand_states:={hand_states} "
+            f"-p arm_states:={arm_states} "
+            f"-p learning_rate:={learning_rate} "
+            f"-p explor_rate:={explor_rate} "
+            f"-p explor_decay_rate:={explor_decay_rate} "
+            f"-p max_explor_rate:={max_explor_rate} "
+            f"-p min_explor_rate:={min_explor_rate} "
+            f"-p discount_factor:={discount_factor}",
+            shell=True
+        )
+        self.get_logger().info(f"Starting Q-learning")
 
     def stop_rl(self):
         self.rl_stop_publisher.publish(Empty())
@@ -99,9 +111,19 @@ class WebApiSubscriber(Node):
         ws_rl_internals.update_state(
             {
                 "qLearning": {
-                    "paramA": msg.param_a,
-                    "paramB": msg.param_b,
-                    "timestamp": msg.timestamp,
+                    "armStates": msg.arm_states,
+                    "handStates": msg.hand_states,
+                    "armStep": msg.arm_step,
+                    "handStep": msg.hand_step,
+                    "learningRate": msg.learning_rate,
+                    "explorationRate": msg.explor_rate,
+                    "explorationDecayRate": msg.explor_decay_rate,
+                    "maxExplorationRate": msg.max_explor_rate,
+                    "minExplorationRate": msg.min_explor_rate,
+                    "discountFactor": msg.discount_factor,
+                    "qTableRows": msg.q_table_rows,
+                    "qTableCols": msg.q_table_cols,
+                    "qTableValues": msg.q_table_values.tolist(),
                 }
             }
         )
@@ -204,9 +226,15 @@ def api_mock_right_encoder():
 
 @app.route("/api/rl/start/qLearning", methods=["POST"])
 def api_rl_start():
-    paramA = request.json.get("paramA")
-    paramB = request.json.get("paramB")
-    publisher.start_rl_q_learning(paramA, paramB)
+    arm_states = request.json.get("armStates")
+    hand_states = request.json.get("handStates")
+    learning_rate = float(request.json.get("learningRate"))
+    explor_rate = float(request.json.get("explorationRate"))
+    explor_decay_rate = float(request.json.get("explorationDecayRate"))
+    max_explor_rate = float(request.json.get("maxExplorationRate"))
+    min_explor_rate = float(request.json.get("minExplorationRate"))
+    discount_factor = float(request.json.get("discountFactor"))
+    publisher.start_rl_q_learning(arm_states, hand_states, learning_rate, explor_rate, explor_decay_rate, max_explor_rate, min_explor_rate, discount_factor)
     return "ok"
 
 @app.route("/api/rl/stop", methods=["POST"])
@@ -231,6 +259,7 @@ class WebSocketStateBroadcast:
 
     def update_state(self, partial_update):
         self.state.update(partial_update)
+        rclpy.logging.get_logger("crawler_web_api-1").info(f"WebSocket state updated: {self.state}")
         for ws in self.connections:
             ws.send(json.dumps(self.state))
 
@@ -247,11 +276,7 @@ ws_manual_state = WebSocketStateBroadcast(
 
 ws_rl_internals = WebSocketStateBroadcast(
     {
-        "qLearning": {
-            "paramA": 0,
-            "paramB": 0,
-            "timestamp": "",
-        }
+        "qLearning": None,
     }
 )
 
