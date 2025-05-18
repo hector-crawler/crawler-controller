@@ -49,7 +49,7 @@ luma-oled = ">=3.14.0, <4"
 flask-sock = ">=0.7.0"
 gpiozero = ">=2.0.1"
 dynamixel-sdk = ">=3.7.31, <4"
-## rpi-only ## "rpi-lgpio" = ">=0.0.6"
+"rpi-lgpio" = ">=0.0.6"
 
 [feature.dev.dependencies]
 python-lsp-server-base = "*"
