@@ -4,10 +4,12 @@ from enum import Enum
 
 import rclpy
 import torch
-from crawler_msgs.msg import QLearningInternalState  # type: ignore
+from crawler_msgs.msg import (
+    QLearningInternalState,  # type: ignore
+    StateReward,
+)
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32
-from crawler_msgs.msg import StateReward
 
 from .action import Action
 from .motors import Arm, Hand
@@ -122,7 +124,7 @@ Q-learning parameters:
 """
         )
 
-        self.create_publisher(Empty, "/crawler/rl/start/", queue_len).publish(Empty())
+        self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
 
     def set_arm_pos(self, msg) -> None:
         self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
@@ -147,7 +149,8 @@ Q-learning parameters:
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
-        move = max(pool)
+        move_idx = torch.argmax(pool).item() + 1
+        move = Move(move_idx)
         return move
 
     def get_reward(self, msg) -> None:
@@ -158,14 +161,19 @@ Q-learning parameters:
         self.send_move(m)
 
     def learn(self, rw: StateReward) -> None:
-        predicted_value = self.q_table[
-            self.last_arm_state, self.last_hand_state, self.last_move
+        idx = [
+            self.last_arm_state,
+            self.last_hand_state,
+            self.last_move.value - 1,
         ]
-        target_value = rw + self.discount_factor * torch.argmax(
-            self.q_table[self.curr_arm_state, self.curr_hand_state]
+        predicted_value = self.q_table[idx]
+        target_value = (
+            rw.reward
+            + self.discount_factor
+            * self.q_table[self.curr_arm_state, self.curr_hand_state].max()
         )
-        self.q_table[self.last_arm_state, self.last_hand_state, self.last_move] = (
-            predicted_value + self.learning_rate * (target_value - predicted_value)
+        self.q_table[idx] = predicted_value + self.learning_rate * (
+            target_value - predicted_value
         )
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
