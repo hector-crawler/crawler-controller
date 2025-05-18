@@ -49,7 +49,7 @@ class MotorsNode(Node):
 
         for motor in [Arm, Hand]:
             self.setup_motor(motor)
-        
+
         self.create_timer(0.5, self.update_motor_positions, autostart=True)
 
     def move_arm(self, msg):
@@ -78,8 +78,9 @@ class MotorsNode(Node):
             self.get_logger().error(f"Failed to enable torque for {motor.name}")
         elif error != 0:
             self.get_logger().error(
-                f"Error occurred while enabling torque for {motor.name}:" +   # error occured here, should probably log error and/or comm_result
-                self.packet_handler.getRxPacketError(error) + str(comm_result)
+                f"Error occurred while enabling torque for {motor.name}:"  # error occured here, should probably log error and/or comm_result
+                + self.packet_handler.getRxPacketError(error)
+                + str(comm_result)
             )
 
     def update_motor_positions(self) -> None:
@@ -87,7 +88,9 @@ class MotorsNode(Node):
         self.hand_position = self.read_motor_position(Hand)
         self.publish_arm_position(self.arm_position)
         self.publish_hand_position(self.hand_position)
-        self.get_logger().info(f"Updated arm and hand position: {self.arm_position} {self.hand_position}")
+        self.get_logger().info(
+            f"Updated arm and hand position: {self.arm_position} {self.hand_position}"
+        )
 
     def read_motor_position(self, motor: MotorData) -> int:
         pos, comm_result, error = self.packet_handler.read4ByteTxRx(
@@ -112,7 +115,9 @@ class MotorsNode(Node):
             self.port_handler, motor.id, GOAL_POS_MEM_ADDR, desired_position
         )
         if comm_result != dxl.COMM_SUCCESS:
-            raise Exception(f"Failed to communicate with {motor.name}, result: {comm_result}")
+            raise Exception(
+                f"Failed to communicate with {motor.name}, result: {comm_result}"
+            )
         elif error != 0:
             raise Exception(f"Failed to move {motor.name}, error: {error}")
 
@@ -125,11 +130,15 @@ class MockMotorsNode(Node):
 
         self.arm_position = 1000
         self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/position", 5)
-        self.create_subscription(Int32, "/crawler/arm/move", lambda msg : self.move_arm(msg.data), 5) # type: ignore
-        
+        self.create_subscription(
+            Int32, "/crawler/arm/move", lambda msg: self.move_arm(msg.data), 5
+        )  # type: ignore
+
         self.hand_position = 1000
         self.hand_publisher = self.create_publisher(Int32, "/crawler/hand/position", 5)
-        self.create_subscription(Int32, "/crawler/hand/move", lambda msg : self.move_hand(msg.data), 5) # type: ignore
+        self.create_subscription(
+            Int32, "/crawler/hand/move", lambda msg: self.move_hand(msg.data), 5
+        )  # type: ignore
 
     def move_arm(self, step: int) -> None:
         self.arm_position = max(600, min(1200, self.arm_position + step))
@@ -142,7 +151,9 @@ class MockMotorsNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    rclpy.spin(MotorsNode() if os.environ.get("CRAWLER_ENV") != "dev" else MockMotorsNode())
+    rclpy.spin(
+        MotorsNode() if os.environ.get("CRAWLER_ENV") != "dev" else MockMotorsNode()
+    )
     rclpy.shutdown()
 
 

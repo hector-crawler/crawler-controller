@@ -26,6 +26,7 @@ setup(
             "crawler_encoders = crawler.encoders:main",
             "crawler_rl_environment = crawler.rl_environment:main",
             "crawler_q_learning = crawler.q_learning:main",
+            "crawler_neural_network = crawler.neural_network:main",
         ],
     },
 )
