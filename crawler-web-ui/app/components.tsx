@@ -42,7 +42,7 @@ export function InputField({ value, onChange, type, label, disabled }: { value?:
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border-2 border-blue-500 rounded-md p-2 disabled:border-gray-600"
+        className="border-2 border-blue-500 rounded-md w-35 p-2 disabled:border-gray-600"
       />
     </div>
   );

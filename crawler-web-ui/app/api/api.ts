@@ -10,6 +10,19 @@ export type ManualState = {
 }
 
 export type RLInternals = {
+    rlEnvironmentInternals: null | {
+        loopState: 0 | 1 | 2,
+        latestStateReward: {
+            armPosition: number,
+            handPosition: number,
+            reward: number,
+        },
+        latestAction: {
+            moveArm: number,
+            moveHand: number,
+        },
+        progress: number,
+    },
     qLearning: null | {
         armStates: number,
         handStates: number,
@@ -119,7 +132,7 @@ export class API {
         return this.post("/api/rl/stop");
     }
 
-    useRLInternals() {
-        return this.ws("/api/rl/internals", { qLearning: null } as RLInternals);
+    useRLInternals(): RLInternals {
+        return this.ws("/api/rl/internals", { rlEnvironmentInternals: null, qLearning: null });
     }
 }
