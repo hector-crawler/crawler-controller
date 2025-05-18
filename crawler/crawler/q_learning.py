@@ -5,13 +5,13 @@ from enum import Enum
 import rclpy
 import torch
 from crawler_msgs.msg import (
+    Action,
     QLearningInternalState,  # type: ignore
     StateReward,
 )
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32
 
-from .action import Action
 from .motors import Arm, Hand
 
 ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
