@@ -21,7 +21,7 @@ export type RLInternals = {
             moveArm: number,
             moveHand: number,
         },
-        progress: number,
+        progress: number[],
     },
     qLearning: null | {
         armStates: number,

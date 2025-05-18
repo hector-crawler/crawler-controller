@@ -122,7 +122,7 @@ class WebApiSubscriber(Node):
                         "moveArm": msg.latest_action.move_arm,
                         "moveHand": msg.latest_action.move_hand,
                     },
-                    "progress": msg.progress,
+                    "progress": msg.progress.tolist(),
                 }
             }
         )

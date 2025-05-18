@@ -1,4 +1,5 @@
 import time
+from typing import List
 import rclpy
 from crawler_msgs.msg import Action, StateReward, RLEnvironmentInternals  # type: ignore
 from rclpy.node import Node
@@ -62,11 +63,9 @@ class RLEnvironmentNode(Node):
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop_rl, 5)
 
         # handle /crawler/rl/internals
-        self.loop_state = 0  # 0 = stopped, 1 = waiting for action, 2 = executing action
         self.latest_state_reward = StateReward(arm_position=0, hand_position=0, reward=0.0)
-        self.latest_action = Action(move_arm=0, move_hand=0)
-        self.initial_encoder_positions = 0
         self.internals_publisher = self.create_publisher(RLEnvironmentInternals, "/crawler/rl/internals", 5)
+        self.reset()
 
     def update_arm_position(self, position: int) -> None:
         self.arm_position = position
@@ -88,24 +87,24 @@ class RLEnvironmentNode(Node):
     #   - send next state and reward to /crawler/rl/state_reward
 
     def publish_state_reward(self) -> None:
+        # calculate reward by adding difference in encoder positions
+        reward = (self.left_encoder_position - self.last_left_encoder_position) + (self.right_encoder_position - self.last_right_encoder_position)
+        self.last_left_encoder_position = self.left_encoder_position
+        self.last_right_encoder_position = self.right_encoder_position
+
+        # calculate progress
+        self.progress.append(self.left_encoder_position + self.right_encoder_position - self.initial_encoder_positions)
+
+        # send state and reward
         msg = StateReward()
         msg.arm_position = self.arm_position
         msg.hand_position = self.hand_position
-        msg.reward = float(self.calculate_reward())
+        msg.reward = float(reward)
         self.state_reward_publisher.publish(msg)
         self.get_logger().info(f"Publising state: arm_position={msg.arm_position}, hand_position={msg.hand_position}, reward={msg.reward}")
         self.latest_state_reward = msg
         self.loop_state = 1
         self.publish_internals()
-
-    def calculate_reward(self) -> int:
-        # calculate reward by adding difference in encoder positions
-        reward = (self.left_encoder_position - self.last_left_encoder_position) + (
-            self.right_encoder_position - self.last_right_encoder_position
-        )
-        self.last_left_encoder_position = self.left_encoder_position
-        self.last_right_encoder_position = self.right_encoder_position
-        return reward
 
     def start_rl(self, _) -> None:
         if self.loop_state != 0:
@@ -143,13 +142,19 @@ class RLEnvironmentNode(Node):
         msg.loop_state = self.loop_state
         msg.latest_state_reward = self.latest_state_reward
         msg.latest_action = self.latest_action
-        msg.progress = self.left_encoder_position + self.right_encoder_position - self.initial_encoder_positions
+        msg.progress = self.progress
         self.internals_publisher.publish(msg)
 
     def stop_rl(self, _) -> None:
-        self.loop_state = 0
+        self.reset()
         self.publish_internals()
         self.get_logger().info("Stopping RL")
+
+    def reset(self) -> None:
+        self.loop_state = 0  # 0 = stopped, 1 = waiting for action, 2 = executing action
+        self.latest_action = Action(move_arm=0, move_hand=0)
+        self.initial_encoder_positions = 0
+        self.progress: List[int] = []
 
 
 def main(args=None):

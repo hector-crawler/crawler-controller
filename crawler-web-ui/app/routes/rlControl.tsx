@@ -4,6 +4,8 @@ import { API, type QLearningConfiguration, type RLInternals } from "~/api/api";
 import { useEffect, useState } from "react";
 import { interpolateColor } from "~/ui/util";
 import classNames from "classnames";
+import { Line } from "react-chartjs-2";
+import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -29,8 +31,14 @@ export default function RLControl({ loaderData }: { loaderData: Route.LoaderArgs
 }
 
 function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLInternals }) {
+  if (rlInternals.rlEnvironmentInternals === null) return <></>;
   const internals = rlInternals.rlEnvironmentInternals;
-  if (internals === null) return <></>;
+
+  const [onlyLatestProgress, setOnlyLatestProgress] = useState(false);
+  const MAX_PROGRESS_ENTRIES = 50;
+  const progressStartIndex = (onlyLatestProgress && rlInternals.rlEnvironmentInternals.progress.length > MAX_PROGRESS_ENTRIES) ? rlInternals.rlEnvironmentInternals.progress.length - MAX_PROGRESS_ENTRIES : 0;
+  const progress = rlInternals.rlEnvironmentInternals.progress.slice(progressStartIndex);
+  Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
   return (
     <div className="flex flex-col items-center p-4 gap-4 border-blue-500 border-1 rounded-xl">
@@ -45,7 +53,7 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
             Latest action:
             <div className="ml-2 flex gap-1.5 items-center">
               <div className="px-2 py-1 rounded-lg font-mono font-bold bg-gray-800 flex gap-0.5 items-center">
@@ -60,10 +68,25 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
             </div>
           </div>
 
-          <LabeledValues label="Progress" table={{
-            "progress": internals.progress,
-          }} />
-        </div>
+          <Line options={{
+            responsive: true,
+            animation: false,
+          }} data={{
+            labels: progress.map((_, i) => progressStartIndex + i),
+            datasets: [{
+              label: "Progress",
+              data: progress,
+              borderColor: "#3b82f6",
+              pointStyle: false,
+            }]
+          }}></Line>
+          <div className="w-full flex justify-end">
+            <div className="flex gap-1 cursor-pointer">
+              <input type="checkbox" id="show-only-latest" className="bg-blue-600 rounded-md" onClick={() => setOnlyLatestProgress(!onlyLatestProgress)}></input>
+              <label htmlFor="show-only-latest" className="text-sm text-gray-400">{onlyLatestProgress ? "show all" : "show only latest"}</label>
+            </div>
+          </div>
+        </div>  
       )}
     </div>
   );
