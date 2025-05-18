@@ -13,7 +13,7 @@ import rclpy
 import rclpy.logging
 from rclpy.node import Node
 from std_msgs.msg import Empty, Bool, Int32
-from crawler_msgs.msg import QLearningInternalState  # type: ignore
+from crawler_msgs.msg import RLEnvironmentInternals, QLearningInternalState  # type: ignore
 
 
 # ROS nodes
@@ -90,6 +90,7 @@ class WebApiSubscriber(Node):
         self.create_subscription(
             Int32, "/crawler/right_encoder/position", self.right_encoder_position, 5
         )
+        self.create_subscription(RLEnvironmentInternals, "/crawler/rl/internals", self.rl_internals, 5)
         self.create_subscription(QLearningInternalState, "/crawler/rl/q_learning/internals", self.rl_q_learning_internals, 5)
 
     def blinker_state(self, msg):
@@ -106,6 +107,25 @@ class WebApiSubscriber(Node):
 
     def right_encoder_position(self, msg):
         ws_manual_state.update_state({"rightEncoderPosition": msg.data})
+
+    def rl_internals(self, msg):
+        ws_rl_internals.update_state(
+            {
+                "rlEnvironmentInternals": {
+                    "loopState": msg.loop_state,
+                    "latestStateReward": {
+                        "armPosition": msg.latest_state_reward.arm_position,
+                        "handPosition": msg.latest_state_reward.hand_position,
+                        "reward": msg.latest_state_reward.reward,
+                    },
+                    "latestAction": {
+                        "moveArm": msg.latest_action.move_arm,
+                        "moveHand": msg.latest_action.move_hand,
+                    },
+                    "progress": msg.progress,
+                }
+            }
+        )
 
     def rl_q_learning_internals(self, msg):
         ws_rl_internals.update_state(
@@ -259,7 +279,6 @@ class WebSocketStateBroadcast:
 
     def update_state(self, partial_update):
         self.state.update(partial_update)
-        rclpy.logging.get_logger("crawler_web_api-1").info(f"WebSocket state updated: {self.state}")
         for ws in self.connections:
             ws.send(json.dumps(self.state))
 
@@ -276,6 +295,7 @@ ws_manual_state = WebSocketStateBroadcast(
 
 ws_rl_internals = WebSocketStateBroadcast(
     {
+        "rlEnvironmentInternals": None,
         "qLearning": None,
     }
 )

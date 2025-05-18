@@ -1,7 +1,10 @@
+import random
+import time
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty
 import torch
+import torch.random
 from crawler_msgs.msg import StateReward, Action, QLearningInternalState  # type: ignore
 
 
@@ -50,6 +53,8 @@ class MockQLearningNode(Node):
         self.create_subscription(StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5)
         self.action_publisher = self.create_publisher(Action, "/crawler/rl/action", 5)
 
+        self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
+
         self.publish_internals()
 
     def stop(self, _):
@@ -58,12 +63,21 @@ class MockQLearningNode(Node):
     
     def receive_state_reward(self, _):
         # randomly change a value in the Q-table
-        row = int(torch.randint(0, self.arm_states, (1,)).item())
-        col = int(torch.randint(0, self.hand_states, (1,)).item())
-        action = int(torch.randint(0, 4, (1,)).item())
-        self.q_table[row][col][action] = torch.randn(1).item()
+        row = random.randint(0, self.arm_states - 1)
+        col = random.randint(0, self.hand_states - 1)
+        action = random.randint(0, 3)
+        self.q_table[row][col][action] = random.randint(0, 100) / 100.0
 
         self.publish_internals()
+
+        time.sleep(1)
+        self.publish_action()
+
+    def publish_action(self):
+        action = Action()
+        action.move_arm = random.randint(0, self.arm_states)
+        action.move_hand = random.randint(0, self.hand_states)
+        self.action_publisher.publish(action)
 
     def publish_internals(self):
         msg = QLearningInternalState()
@@ -78,8 +92,6 @@ class MockQLearningNode(Node):
         msg.min_explor_rate = self.min_explor_rate
         msg.discount_factor = self.discount_factor
 
-        self.get_logger().info(f"Q-table: {self.q_table}")
-
         msg.q_table_rows = []
         for i_arm in range(self.arm_states):
             for i_hand in range(self.hand_states):
@@ -90,10 +102,6 @@ class MockQLearningNode(Node):
             msg.q_table_cols.append(f"action {i_action}")
         
         msg.q_table_values = self.q_table.flatten().tolist()
-        
-        self.get_logger().info(f"Q-table rows: {msg.q_table_rows}")
-        self.get_logger().info(f"Q-table cols: {msg.q_table_cols}")
-        self.get_logger().info(f"Q-table values: {msg.q_table_values}")
 
         self.internals_publisher.publish(msg)
 
