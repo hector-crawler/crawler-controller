@@ -38,16 +38,27 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
 
       {internals.loopState !== 0 && (
         <div className="width-full flex flex-col gap-4">
-          <LabeledValues label="Latest state and reward" table={{
-            "arm position": internals.latestStateReward.armPosition,
-            "hand position": internals.latestStateReward.handPosition,
-            "reward": internals.latestStateReward.reward,
-          }} />
+          <div className="flex items-center gap-2">
+            Reward:
+            <div className={classNames("px-2 py-1 rounded-lg font-mono font-bold", {"bg-gray-600": internals.latestStateReward.reward === 0, "bg-green-700": internals.latestStateReward.reward > 0, "bg-red-700": internals.latestStateReward.reward < 0})}>
+              {internals.latestStateReward.reward > 0 ? `+${internals.latestStateReward.reward}` : internals.latestStateReward.reward}
+            </div>
+          </div>
 
-          <LabeledValues label="Latest action" table={{
-            "move arm": internals.latestAction.moveArm,
-            "move hand": internals.latestAction.moveHand,
-          }} />
+          <div className="flex flex-col gap-1">
+            Latest action:
+            <div className="ml-2 flex gap-1.5 items-center">
+              <div className="px-2 py-1 rounded-lg font-mono font-bold bg-gray-800 flex gap-0.5 items-center">
+                <span className="text-sm translate-y-[1px]">{internals.latestAction.moveArm > 0 ? "🡩" : internals.latestAction.moveArm < 0 ? "🡫" : "🡪"}</span>
+                <span>{Math.abs(internals.latestAction.moveArm)}</span>
+              </div>
+              /
+              <div className="px-2 py-1 rounded-lg font-mono font-bold bg-gray-800 flex gap-0.5 items-center">
+                <span className="text-sm translate-y-[1px]">{internals.latestAction.moveHand > 0 ? "🡩" : internals.latestAction.moveHand < 0 ? "🡫" : "🡪"}</span>
+                <span>{Math.abs(internals.latestAction.moveHand)}</span>
+              </div>
+            </div>
+          </div>
 
           <LabeledValues label="Progress" table={{
             "progress": internals.progress,
