@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 
+import rclpy
 import torch
 from crawler_msgs.msg import (  # type: ignore
     Action,
@@ -90,11 +91,7 @@ NN parameters:
             Action, "/crawler/rl/action", queue_len
         )
 
-        self.device = (
-            torch.accelerator.current_accelerator().type
-            if torch.accelerator.is_available()
-            else "cpu"
-        )
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.get_logger().info(f"Using {self.device} device for the neural network")
         self.model = NN(inner_size=100).to(self.device)
         self.get_logger().info(f"Model: {self.model}")
@@ -154,3 +151,12 @@ NN parameters:
         nn.CrossEntropyLoss()(self.last_outputs, rw.reward).backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
+
+def main(args=None):
+    rclpy.init(args=args)
+    rclpy.spin(NeuralNetworkNode())
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
