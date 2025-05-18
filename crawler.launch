@@ -16,5 +16,9 @@
     </node>
 
     <!-- Raspberry Pi pinout: https://pinout.xyz/ -->
+
+    <node pkg="crawler" exec="crawler_rl_environment"></node>
+
+    <!-- crawler_q_learning, ... nodes are started by crawler_web_api -->
  
 </launch>

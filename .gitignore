@@ -1,3 +1,5 @@
+.vscode
+
 # scripts
 scripts/upload-env.sh
 scripts/upload-env.*.sh

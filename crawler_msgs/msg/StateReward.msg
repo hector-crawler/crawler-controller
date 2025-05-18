@@ -1,0 +1,3 @@
+int32 arm_position
+int32 hand_position
+float32 reward
