@@ -1,7 +1,7 @@
 import { InputField, LargeButton } from "~/components";
 import type { Route } from "./+types/home";
 import { API, type QLearningConfiguration, type RLInternals } from "~/api/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { interpolateColor } from "~/ui/util";
 import classNames from "classnames";
 
@@ -146,8 +146,16 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
 
 function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: string[], rowLabels: string[], values: number[] }) {
   const cell = (key: string, text: string, isQValue: boolean, value: number) => {
+    const [highlighted, setHighlighted] = useState(false);
+    if (isQValue) {
+      useEffect(() => {
+        setHighlighted(true);
+        const timeout = setTimeout(() => setHighlighted(false), 750);
+        return () => clearTimeout(timeout);
+      }, [value])
+    }
     return <div key={key}
-      className={classNames("flex justify-center items-center m-0 px-1.5 py-0.5 rounded-md", {"font-mono border-1 border-blue-800": isQValue})}
+      className={classNames("flex justify-center items-center m-0 px-1.5 py-0.5 rounded-md transition-[background-color,outline-color] outline-2 outline-transparent", {"font-mono border-1 border-blue-800": isQValue}, {"outline-white!": highlighted})}
       style={{backgroundColor: interpolateColor("#030712" /* gray-800 */, "#3b82f6" /* blue-500 */, value)}}
     >{text}</div>;
   }
