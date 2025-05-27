@@ -58,10 +58,14 @@ class NeuralNetworkNode(Node):
             self.get_parameter("hand_step").get_parameter_value().integer_value
         )
 
-        # Parameters regarding the Q-Learning
+        # Parameters regarding the Neural Network
         self.declare_parameter("learning_rate", 0.5)
         self.learning_rate = (
             self.get_parameter("learning_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("inner_layer_width", 100)
+        self.inner_layer_width = (
+            self.get_parameter("inner_layer_width").get_parameter_value().double_value
         )
 
         self.get_logger().info(f"""
@@ -91,9 +95,9 @@ NN parameters:
             Action, "/crawler/rl/action", queue_len
         )
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.get_logger().info(f"Using {self.device} device for the neural network")
-        self.model = NN(inner_size=100).to(self.device)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.get_logger().info(f"Using {device} device for the neural network")
+        self.model = NN(inner_size=self.inner_layer_width).to(device)
         self.get_logger().info(f"Model: {self.model}")
         # Maybe use optim.SGD?
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -151,6 +155,7 @@ NN parameters:
         nn.CrossEntropyLoss()(self.last_outputs, rw.reward).backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
+
 
 def main(args=None):
     rclpy.init(args=args)

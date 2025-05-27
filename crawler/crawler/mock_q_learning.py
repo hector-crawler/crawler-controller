@@ -75,8 +75,8 @@ class MockQLearningNode(Node):
 
     def publish_action(self):
         action = Action()
-        action.move_arm = random.randint(0, self.arm_states)
-        action.move_hand = random.randint(0, self.hand_states)
+        action.move_arm = random.randint(-5, 5)
+        action.move_hand = random.randint(-5, 5)
         self.action_publisher.publish(action)
 
     def publish_internals(self):
