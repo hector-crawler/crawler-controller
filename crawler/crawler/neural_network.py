@@ -32,7 +32,7 @@ class NN(nn.Module):
             nn.Linear(inner_size, len(Move)),
         )
 
-    def forward(self, x) -> None:
+    def forward(self, x):
         return self.linear_relu_stack(nn.Flatten()(x))
 
 
@@ -59,13 +59,13 @@ class NeuralNetworkNode(Node):
         )
 
         # Parameters regarding the Neural Network
+        self.declare_parameter("inner_layer_width", 100)
+        self.inner_layer_width = (
+            self.get_parameter("inner_layer_width").get_parameter_value().integer_value
+        )
         self.declare_parameter("learning_rate", 0.5)
         self.learning_rate = (
             self.get_parameter("learning_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("inner_layer_width", 100)
-        self.inner_layer_width = (
-            self.get_parameter("inner_layer_width").get_parameter_value().double_value
         )
 
         self.get_logger().info(f"""
@@ -147,7 +147,7 @@ NN parameters:
 
     def pick_move(self) -> Move:
         self.last_outputs = self.model(
-            [self.curr_arm_state, self.curr_hand_state, self.last_move]
+            [self.curr_arm_state, self.curr_hand_state, self.last_move.value]
         )
         return Move(torch.argmax(self.last_outputs))
 
