@@ -1,6 +1,5 @@
 import datetime
 import random as rand
-from enum import Enum
 
 import rclpy
 import torch
@@ -10,19 +9,13 @@ from crawler_msgs.msg import (  # type: ignore
     StateReward,
 )
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32 
+from std_msgs.msg import Empty, Int32
 
 from .motors import Arm, Hand
+from .move import Move
 
 ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
 HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
-
-
-class Move(Enum):
-    ARM_UP = 1
-    ARM_DOWN = 2
-    HAND_UP = 3
-    HAND_DOWN = 4
 
 
 class QLearningNode(Node):
@@ -31,47 +24,47 @@ class QLearningNode(Node):
 
         # Parameters regarding the motors
         self.declare_parameter("arm_states", 3)
-        self.arm_states = (
+        self.arm_states: int = (
             self.get_parameter("arm_states").get_parameter_value().integer_value
         )
         self.declare_parameter("hand_states", 3)
-        self.hand_states = (
+        self.hand_states: int = (
             self.get_parameter("hand_states").get_parameter_value().integer_value
         )
         self.declare_parameter("arm_step", 200)
-        self.arm_step = (
+        self.arm_step: int = (
             self.get_parameter("arm_step").get_parameter_value().integer_value
         )
         self.declare_parameter("hand_step", 200)
-        self.hand_step = (
+        self.hand_step: int = (
             self.get_parameter("hand_step").get_parameter_value().integer_value
         )
 
         # Parameters regarding the Q-Learning
         self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate = (
+        self.learning_rate: float = (
             self.get_parameter("learning_rate").get_parameter_value().double_value
         )
         self.declare_parameter("explor_rate", 1.0)
-        self.explor_rate = (
+        self.explor_rate: float = (
             self.get_parameter("explor_rate").get_parameter_value().double_value
         )
         self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate = (
+        self.explor_decay_rate: float = (
             self.get_parameter("explor_decay_rate").get_parameter_value().double_value
         )
         self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate = (
+        self.max_explor_rate: float = (
             self.get_parameter("max_explor_rate").get_parameter_value().double_value
         )
         self.declare_parameter("min_explor_rate", 0.01)
-        self.min_explor_rate = (
+        self.min_explor_rate: float = (
             self.get_parameter("min_explor_rate").get_parameter_value().double_value
         )
-        self.declare_parameter("discount_factor", 0.99)
-        self.discount_factor = (
-            self.get_parameter("discount_factor").get_parameter_value().double_value
-        )
+        # self.declare_parameter("discount_factor", 0.99)
+        # self.discount_factor: float = (
+        #     self.get_parameter("discount_factor").get_parameter_value().double_value
+        # )
 
         queue_len = 5
         self.internal_state_publisher = self.create_publisher(
@@ -102,8 +95,7 @@ class QLearningNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        # We might also want to use torch.rand() for initialization.
-        self.q_table = torch.zeros(
+        self.q_table = torch.rand(
             # At this point we might also think about adding another dimension for self.last_move
             [self.arm_states, self.hand_states, self.moves_count]
             # We might also want to investigate changing the dtype parameter for our usecase.
@@ -146,37 +138,38 @@ Q-learning parameters:
     def pick_move(self) -> Move:
         if rand.uniform(0, 1) < self.explor_rate:
             something_new = rand.choice(list(Move))
+            self.get_logger().info(f"Randomly selected move {something_new}")
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
-        move_idx = torch.argmax(pool).item() + 1
+        move_idx = torch.argmax(pool).item()
         move = Move(move_idx)
+        self.get_logger().info(f"Selected move {move}")
         return move
 
     def get_reward(self, msg) -> None:
-        reward = msg.data
-        self.learn(reward)
-        m = self.pick_move()
-        self.last_move = m
-        self.send_move(m)
+        self.learn(msg.data)
+        self.last_move = self.pick_move()
+        self.send_move(self.last_move)
 
     def learn(self, rw: StateReward) -> None:
-        idx = [
-            self.last_arm_state,
-            self.last_hand_state,
-            self.last_move.value - 1,
-        ]
+        idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
         predicted_value = self.q_table[idx]
         target_value = (
-            rw.reward
-            + self.discount_factor
-            * self.q_table[self.curr_arm_state, self.curr_hand_state].max()
+            self.q_table[self.curr_arm_state, self.curr_hand_state].max()
+            # * self.discount_factor
+            + rw.reward
         )
         self.q_table[idx] = predicted_value + self.learning_rate * (
             target_value - predicted_value
         )
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
+
+        self.exploration_rate = max(
+            self.min_explor_rate,
+            min(self.max_explor_rate, self.explor_rate - self.explor_decay_rate),
+        )
 
     def publish_internal_state(self) -> None:
         msg = QLearningInternalState()
