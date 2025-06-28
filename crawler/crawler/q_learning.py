@@ -139,11 +139,13 @@ Q-learning parameters:
     def pick_move(self) -> Move:
         if rand.uniform(0, 1) < self.explor_rate:
             something_new = rand.choice(list(Move))
+            self.get_logger().info(f"Randomly selected move {something_new}")
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
-        move_idx = torch.argmax(pool).item() + 1
+        move_idx = torch.argmax(pool).item()
         move = Move(move_idx)
+        self.get_logger().info(f"Selected move {move}")
         return move
 
     def get_reward(self, msg) -> None:
@@ -155,13 +157,13 @@ Q-learning parameters:
         idx = [
             self.last_arm_state,
             self.last_hand_state,
-            self.last_move.value - 1,
+            self.last_move.value,
         ]
         predicted_value = self.q_table[idx]
         target_value = (
-            rw.reward
-            + self.discount_factor
+            self.discount_factor
             * self.q_table[self.curr_arm_state, self.curr_hand_state].max()
+            + rw.reward
         )
         self.q_table[idx] = predicted_value + self.learning_rate * (
             target_value - predicted_value

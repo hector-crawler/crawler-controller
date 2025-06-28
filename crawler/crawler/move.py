@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Move(Enum):
-    ARM_UP = 1
-    ARM_DOWN = 2
-    HAND_UP = 3
-    HAND_DOWN = 4
+    ARM_UP = 0
+    ARM_DOWN = 1
+    HAND_UP = 2
+    HAND_DOWN = 3
