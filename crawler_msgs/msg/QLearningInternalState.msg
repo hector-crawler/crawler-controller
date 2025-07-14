@@ -4,8 +4,7 @@ int32 arm_step
 int32 hand_step
 float64 learning_rate
 float64 explor_rate
-float64 explor_decay_rate
-float64 max_explor_rate
+float64 explor_decay_factor
 float64 min_explor_rate
 float64 discount_factor
 

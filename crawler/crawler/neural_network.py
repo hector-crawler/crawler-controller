@@ -1,13 +1,15 @@
 import time
 from datetime import datetime
 
+import numpy as np
 import rclpy
-from keras import model, layers
 from crawler_msgs.msg import (  # type: ignore
     Action,
     QLearningInternalState,
     StateReward,
 )
+from keras import layers, model
+from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32
 
@@ -45,7 +47,11 @@ class NeuralNetworkNode(Node):
         self.inner_layer_width = (
             self.get_parameter("inner_layer_width").get_parameter_value().integer_value
         )
-        # Parameters regarding the Q-Learning
+        self.declare_parameter("inner_layer_count", 1)
+        self.inner_layer_count = (
+            self.get_parameter("inner_layer_count").get_parameter_value().integer_value
+        )
+
         self.declare_parameter("learning_rate", 0.5)
         self.learning_rate: float = (
             self.get_parameter("learning_rate").get_parameter_value().double_value
@@ -54,13 +60,9 @@ class NeuralNetworkNode(Node):
         self.explor_rate: float = (
             self.get_parameter("explor_rate").get_parameter_value().double_value
         )
-        self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate: float = (
-            self.get_parameter("explor_decay_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate: float = (
-            self.get_parameter("max_explor_rate").get_parameter_value().double_value
+        self.declare_parameter("explor_decay_factor", 0.99)
+        self.explor_decay_factor: float = (
+            self.get_parameter("explor_decay_factor").get_parameter_value().double_value
         )
         self.declare_parameter("min_explor_rate", 0.01)
         self.min_explor_rate: float = (
@@ -70,11 +72,6 @@ class NeuralNetworkNode(Node):
         self.discount_factor: float = (
             self.get_parameter("discount_factor").get_parameter_value().double_value
         )
-
-        self.get_logger().info(f"""
-NN parameters:
-    Learning rate: {self.learning_rate}
-""")
 
         queue_len = 5
         self.internal_state_publisher = self.create_publisher(
@@ -105,14 +102,29 @@ NN parameters:
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        ##### KERAS PART ##########
-        modl = model.Sequential()
-        modl.add(
+        self.model = model.Sequential()
+        self.model.add(
             layers.InputLayer(batch_input_shape=(self.arm_states, self.hand_states))
         )
-        modl.add(layers.Dense(self.inner_layer_width, activation="relu"))
-        modl.add(layers.Dense(self.moves_count, activation="linear"))
-        modl.compile(loss="mse", optimizer="adam", metrics=["mae"])
+        for _ in range(self.inner_layer_count):
+            self.model.add(layers.Dense(self.inner_layer_width, activation="relu"))
+        self.model.add(layers.Dense(self.moves_count, activation="linear"))
+        self.model.compile(loss="mse", optimizer="adam", metrics=["mae"])
+
+        self.last_predicts: np.ndarray = np.array([])
+
+        self.get_logger().info(
+            f"""
+NN parameters:
+    Arm states = {self.arm_states}
+    Hand states = {self.hand_states}
+    No. of Moves = {self.moves_count}
+
+    Exploration rate = {self.explor_rate}
+    Exploration decay factor = {self.explor_decay_factor}
+    Min exploration rate = {self.min_explor_rate}
+"""
+        )
 
         time.sleep(0.5)
         self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
@@ -151,15 +163,25 @@ NN parameters:
                 self.action_publisher.publish(Action(0, -self.hand_step))
 
     def pick_move(self) -> Move:
-        self.last_outputs = self.model(
-            [self.curr_arm_state, self.curr_hand_state, self.last_move.value]
-        )
-        return Move(torch.argmax(self.last_outputs))
+        if rand.random() < self.explor_rate:
+            something_new = rand.choice(np.array(Move))
+            self.get_logger().info(f"Randomly selected move {something_new}")
+            return something_new
+
+        self.last_predicts = model.predict((self.curr_arm_state, self.curr_hand_state))
+        move = np.argmax(self.last_predicts)
+        self.get_logger().info(f"Selected move {move}")
+        return Move(move)
 
     def learn(self, rw: StateReward) -> None:
-        nn.CrossEntropyLoss()(self.last_outputs, rw.reward).backward()
-        self.optimizer.step()
-        self.optimizer.zero_grad()
+        target = rw.reward + self.discount_factor * np.max(self.last_predicts)
+        target_vector = self.last_predicts[0]
+        target_vector[self.last_move] = target
+        model.fit(
+            (self.curr_arm_state, self.curr_hand_state),
+            target_vector.reshape(-1, self.moves_count),
+            epochs=1,
+        )
 
 
 def main(args=None):

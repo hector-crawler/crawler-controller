@@ -49,13 +49,9 @@ class QLearningNode(Node):
         self.explor_rate: float = (
             self.get_parameter("explor_rate").get_parameter_value().double_value
         )
-        self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate: float = (
-            self.get_parameter("explor_decay_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate: float = (
-            self.get_parameter("max_explor_rate").get_parameter_value().double_value
+        self.declare_parameter("explor_decay_factor", 0.99)
+        self.explor_decay_factor: float = (
+            self.get_parameter("explor_decay_factor").get_parameter_value().double_value
         )
         self.declare_parameter("min_explor_rate", 0.01)
         self.min_explor_rate: float = (
@@ -111,9 +107,8 @@ Q-learning parameters:
     No. of Moves = {self.moves_count}
 
     Exploration rate = {self.explor_rate}
-    Exploration decay rate = {self.explor_decay_rate}
+    Exploration decay factor = {self.explor_decay_factor}
     Min exploration rate = {self.min_explor_rate}
-    Max exploration rate = {self.max_explor_rate}
 """
         )
 
@@ -167,10 +162,8 @@ Q-learning parameters:
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
 
-        self.exploration_rate = max(
-            self.min_explor_rate,
-            min(self.max_explor_rate, self.explor_rate - self.explor_decay_rate),
-        )
+        self.explor_rate *= self.explor_decay_factor
+        self.explor_rate = max(self.min_explor_rate, self.explor_rate)
 
     def publish_internal_state(self) -> None:
         msg = QLearningInternalState()

@@ -42,6 +42,7 @@ setuptools = ">=80.1.0,<81"
 nodejs = ">=22.13.0,<22.14"
 pytorch = ">=2.6.0,<3"
 keras = ">=3.10.0,<4"
+numpy = ">=1.26.4,<2"
 
 [pypi-dependencies]
 rpi-gpio = ">=0.7.1, <0.8"
