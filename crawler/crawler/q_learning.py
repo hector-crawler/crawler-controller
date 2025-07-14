@@ -95,7 +95,8 @@ class QLearningNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        self.q_table = torch.rand(
+        # We might also want to use torch.rand() for initialization.
+        self.q_table = torch.zeros(
             # At this point we might also think about adding another dimension for self.last_move
             [self.arm_states, self.hand_states, self.moves_count]
             # We might also want to investigate changing the dtype parameter for our usecase.
