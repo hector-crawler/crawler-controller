@@ -1,8 +1,8 @@
 import datetime
-import random as rand
 
 import rclpy
-import torch
+import numpy as np
+from numpy import random as rand
 from crawler_msgs.msg import (  # type: ignore
     Action,
     QLearningInternalState,
@@ -92,11 +92,11 @@ class QLearningNode(Node):
         self.last_hand_state = 0
 
         # We might also want to use torch.rand() for initialization.
-        self.q_table = torch.zeros(
+        self.q_table = np.zeros(
             # At this point we might also think about adding another dimension for self.last_move
             [self.arm_states, self.hand_states, self.moves_count]
             # We might also want to investigate changing the dtype parameter for our usecase.
-            # https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype
+            # https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
         )
 
         self.get_logger().info(
@@ -132,13 +132,13 @@ Q-learning parameters:
                 self.action_publisher.publish(Action(0, -self.hand_step))
 
     def pick_move(self) -> Move:
-        if rand.uniform(0, 1) < self.explor_rate:
-            something_new = rand.choice(list(Move))
+        if rand.random() < self.explor_rate:
+            something_new = rand.choice(np.array(Move))
             self.get_logger().info(f"Randomly selected move {something_new}")
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
-        move_idx = torch.argmax(pool).item()
+        move_idx = np.argmax(pool).item()
         move = Move(move_idx)
         self.get_logger().info(f"Selected move {move}")
         return move
