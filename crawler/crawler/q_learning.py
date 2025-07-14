@@ -61,10 +61,10 @@ class QLearningNode(Node):
         self.min_explor_rate: float = (
             self.get_parameter("min_explor_rate").get_parameter_value().double_value
         )
-        # self.declare_parameter("discount_factor", 0.99)
-        # self.discount_factor: float = (
-        #     self.get_parameter("discount_factor").get_parameter_value().double_value
-        # )
+        self.declare_parameter("discount_factor", 0.95)
+        self.discount_factor: float = (
+            self.get_parameter("discount_factor").get_parameter_value().double_value
+        )
 
         queue_len = 5
         self.internal_state_publisher = self.create_publisher(
@@ -158,7 +158,7 @@ Q-learning parameters:
         predicted_value = self.q_table[idx]
         target_value = (
             self.q_table[self.curr_arm_state, self.curr_hand_state].max()
-            # * self.discount_factor
+            * self.discount_factor
             + rw.reward
         )
         self.q_table[idx] = predicted_value + self.learning_rate * (

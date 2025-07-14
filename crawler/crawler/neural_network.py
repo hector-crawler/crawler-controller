@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 import rclpy
-import torch
+from keras import model, layers
 from crawler_msgs.msg import (  # type: ignore
     Action,
     QLearningInternalState,
@@ -10,30 +10,12 @@ from crawler_msgs.msg import (  # type: ignore
 )
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32
-from torch import nn, optim
 
 from .motors import Arm, Hand
 from .move import Move
 
 ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
 HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
-
-
-class NN(nn.Module):
-    def __init__(self, inner_size: int) -> None:
-        super().__init__()
-
-        inputs = 3
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(inputs, inner_size),
-            nn.ReLU(),
-            nn.Linear(inner_size, inner_size),
-            nn.ReLU(),
-            nn.Linear(inner_size, len(Move)),
-        )
-
-    def forward(self, x):
-        return self.linear_relu_stack(nn.Flatten()(x))
 
 
 class NeuralNetworkNode(Node):
@@ -63,9 +45,30 @@ class NeuralNetworkNode(Node):
         self.inner_layer_width = (
             self.get_parameter("inner_layer_width").get_parameter_value().integer_value
         )
+        # Parameters regarding the Q-Learning
         self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate = (
+        self.learning_rate: float = (
             self.get_parameter("learning_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("explor_rate", 1.0)
+        self.explor_rate: float = (
+            self.get_parameter("explor_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("explor_decay_rate", 0.05)
+        self.explor_decay_rate: float = (
+            self.get_parameter("explor_decay_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("max_explor_rate", 0.5)
+        self.max_explor_rate: float = (
+            self.get_parameter("max_explor_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("min_explor_rate", 0.01)
+        self.min_explor_rate: float = (
+            self.get_parameter("min_explor_rate").get_parameter_value().double_value
+        )
+        self.declare_parameter("discount_factor", 0.95)
+        self.discount_factor: float = (
+            self.get_parameter("discount_factor").get_parameter_value().double_value
         )
 
         self.get_logger().info(f"""
@@ -95,19 +98,21 @@ NN parameters:
             Action, "/crawler/rl/action", queue_len
         )
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.get_logger().info(f"Using {device} device for the neural network")
-        self.model = NN(inner_size=self.inner_layer_width).to(device)
-        self.get_logger().info(f"Model: {self.model}")
-        # Maybe use optim.SGD?
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-
         self.moves_count = len(Move)
         self.last_move = Move.ARM_UP
         self.curr_arm_state = 0
         self.curr_hand_state = 0
         self.last_arm_state = 0
         self.last_hand_state = 0
+
+        ##### KERAS PART ##########
+        modl = model.Sequential()
+        modl.add(
+            layers.InputLayer(batch_input_shape=(self.arm_states, self.hand_states))
+        )
+        modl.add(layers.Dense(self.inner_layer_width, activation="relu"))
+        modl.add(layers.Dense(self.moves_count, activation="linear"))
+        modl.compile(loss="mse", optimizer="adam", metrics=["mae"])
 
         time.sleep(0.5)
         self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
