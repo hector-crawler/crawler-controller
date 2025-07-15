@@ -1,21 +1,16 @@
-import datetime
-
-import rclpy
 import numpy as np
-from numpy import random as rand
+import rclpy
 from crawler_msgs.msg import (  # type: ignore
     Action,
     QLearningInternalState,
     StateReward,
 )
+from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32
+from std_msgs.msg import Empty, Int32  # type: ignore
 
-from .motors import Arm, Hand
-from .move import Move
-
-ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
-HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
+from .motors import ARM_RANGE, HAND_RANGE
+from .move import MOVES_COUNT, Move
 
 
 class QLearningNode(Node):
@@ -63,7 +58,7 @@ class QLearningNode(Node):
         )
 
         queue_len = 5
-        self.internal_state_publisher = self.create_publisher(
+        self.internals_publisher = self.create_publisher(
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
         self.create_timer(1.0, self.publish_internal_state)
@@ -74,17 +69,16 @@ class QLearningNode(Node):
         )
 
         self.create_subscription(
-            Int32, "/crawler/arm/position", self.set_arm_pos, queue_len
+            Int32, "/crawler/arm/position", self.receive_arm_pos, queue_len
         )
         self.create_subscription(
-            Int32, "/crawler/hand/position", self.set_hand_pos, queue_len
+            Int32, "/crawler/hand/position", self.receive_hand_pos, queue_len
         )
 
         self.action_publisher = self.create_publisher(
             Action, "/crawler/rl/action", queue_len
         )
 
-        self.moves_count = len(Move)
         self.last_move = Move.ARM_UP
         self.curr_arm_state = 0
         self.curr_hand_state = 0
@@ -94,7 +88,7 @@ class QLearningNode(Node):
         # We might also want to use torch.rand() for initialization.
         self.q_table = np.zeros(
             # At this point we might also think about adding another dimension for self.last_move
-            [self.arm_states, self.hand_states, self.moves_count]
+            [self.arm_states, self.hand_states, MOVES_COUNT]
             # We might also want to investigate changing the dtype parameter for our usecase.
             # https://numpy.org/doc/stable/reference/generated/numpy.zeros.html
         )
@@ -104,21 +98,23 @@ class QLearningNode(Node):
 Q-learning parameters:
     Arm states = {self.arm_states}
     Hand states = {self.hand_states}
-    No. of Moves = {self.moves_count}
+    No. of Moves = {MOVES_COUNT}
+    Q-Table size = {self.arm_states}x{self.hand_states}x{MOVES_COUNT} = {self.arm_states * self.hand_states * MOVES_COUNT} cells
 
     Exploration rate = {self.explor_rate}
     Exploration decay factor = {self.explor_decay_factor}
     Min exploration rate = {self.min_explor_rate}
+    Discount factor = {self.discount_factor}
 """
         )
 
         self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
 
-    def set_arm_pos(self, msg) -> None:
-        self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
+    def receive_arm_pos(self, msg) -> None:
+        self.curr_arm_state = int(msg.data * self.arm_states / ARM_RANGE)
 
-    def set_hand_pos(self, msg) -> None:
-        self.curr_hand_state = int(msg.data * self.hand_states / HAND_MOTOR_RANGE)
+    def receive_hand_pos(self, msg) -> None:
+        self.curr_hand_state = int(msg.data * self.hand_states / HAND_RANGE)
 
     def send_move(self, m: Move) -> None:
         match m:
@@ -167,10 +163,28 @@ Q-learning parameters:
 
     def publish_internal_state(self) -> None:
         msg = QLearningInternalState()
-        msg.param_a = self.arm_states
-        msg.param_b = self.hand_states
-        msg.timestamp = datetime.datetime.now().isoformat()
-        self.internal_state_publisher.publish(msg)
+        msg.arm_states = self.arm_states
+        msg.hand_states = self.hand_states
+        msg.arm_step = self.arm_step
+        msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
+        msg.explor_rate = self.explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
+        msg.min_explor_rate = self.min_explor_rate
+        msg.discount_factor = self.discount_factor
+
+        msg.q_table_rows = []
+        for i_arm in range(self.arm_states):
+            for i_hand in range(self.hand_states):
+                msg.q_table_rows.append(f"{i_arm}x{i_hand}")
+
+        msg.q_table_cols = []
+        for i_action in range(MOVES_COUNT):
+            msg.q_table_cols.append(f"action {i_action}")
+
+        msg.q_table_values = self.q_table.flatten().tolist()
+
+        self.internals_publisher.publish(msg)
 
     def stop(self, _) -> None:
         self.get_logger().info("Shutting down Q-learning node")

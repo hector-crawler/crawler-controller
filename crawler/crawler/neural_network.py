@@ -1,23 +1,19 @@
 import time
-from datetime import datetime
 
 import numpy as np
 import rclpy
 from crawler_msgs.msg import (  # type: ignore
     Action,
-    QLearningInternalState,
+    NNInternalState,
     StateReward,
 )
 from keras import layers, model
 from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32
+from std_msgs.msg import Empty, Int32  # type: ignore
 
-from .motors import Arm, Hand
-from .move import Move
-
-ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
-HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
+from .motors import ARM_RANGE, HAND_RANGE
+from .move import MOVES_COUNT, Move
 
 
 class NeuralNetworkNode(Node):
@@ -44,11 +40,11 @@ class NeuralNetworkNode(Node):
 
         # Parameters regarding the Neural Network
         self.declare_parameter("inner_layer_width", 100)
-        self.inner_layer_width = (
+        self.hidden_width = (
             self.get_parameter("inner_layer_width").get_parameter_value().integer_value
         )
         self.declare_parameter("inner_layer_count", 1)
-        self.inner_layer_count = (
+        self.hidden_count = (
             self.get_parameter("inner_layer_count").get_parameter_value().integer_value
         )
 
@@ -73,9 +69,22 @@ class NeuralNetworkNode(Node):
             self.get_parameter("discount_factor").get_parameter_value().double_value
         )
 
+        self.declare_parameter("optimizer", "adam")
+        self.optimizer: str = (
+            self.get_parameter("optimizer").get_parameter_value().string_value
+        )
+        self.declare_parameter("hidden_activation", "relu")
+        self.hidden_activation: str = (
+            self.get_parameter("hidden_activation").get_parameter_value().string_value
+        )
+        self.declare_parameter("output_activation", "linear")
+        self.output_activation: str = (
+            self.get_parameter("output_activation").get_parameter_value().string_value
+        )
+
         queue_len = 5
-        self.internal_state_publisher = self.create_publisher(
-            QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
+        self.internals_publisher = self.create_publisher(
+            NNInternalState, "/crawler/rl/nn/internals", queue_len
         )
         self.create_timer(1.0, self.publish_internal_state)
 
@@ -85,17 +94,16 @@ class NeuralNetworkNode(Node):
         )
 
         self.create_subscription(
-            Int32, "/crawler/arm/position", self.set_arm_pos, queue_len
+            Int32, "/crawler/arm/position", self.receive_arm_pos, queue_len
         )
         self.create_subscription(
-            Int32, "/crawler/hand/position", self.set_hand_pos, queue_len
+            Int32, "/crawler/hand/position", self.receive_hand_pos, queue_len
         )
 
         self.action_publisher = self.create_publisher(
             Action, "/crawler/rl/action", queue_len
         )
 
-        self.moves_count = len(Move)
         self.last_move = Move.ARM_UP
         self.curr_arm_state = 0
         self.curr_hand_state = 0
@@ -106,10 +114,12 @@ class NeuralNetworkNode(Node):
         self.model.add(
             layers.InputLayer(batch_input_shape=(self.arm_states, self.hand_states))
         )
-        for _ in range(self.inner_layer_count):
-            self.model.add(layers.Dense(self.inner_layer_width, activation="relu"))
-        self.model.add(layers.Dense(self.moves_count, activation="linear"))
-        self.model.compile(loss="mse", optimizer="adam", metrics=["mae"])
+        for _ in range(self.hidden_count):
+            self.model.add(
+                layers.Dense(self.hidden_width, activation=self.hidden_activation)
+            )
+        self.model.add(layers.Dense(MOVES_COUNT, activation=self.output_activation))
+        self.model.compile(loss="mse", optimizer=self.optimizer, metrics=["mae"])
 
         self.last_predicts: np.ndarray = np.array([])
 
@@ -118,11 +128,18 @@ class NeuralNetworkNode(Node):
 NN parameters:
     Arm states = {self.arm_states}
     Hand states = {self.hand_states}
-    No. of Moves = {self.moves_count}
+    No. of Moves = {MOVES_COUNT}
+
+    Hidden layers = {self.hidden_count}
+    Hidden layer width = {self.hidden_width}
+    Hidden layer activation = {self.hidden_activation}
+    Output layer activation = {self.output_activation}
+    Optimizer = {self.optimizer}
 
     Exploration rate = {self.explor_rate}
     Exploration decay factor = {self.explor_decay_factor}
     Min exploration rate = {self.min_explor_rate}
+    Discount factor = {self.discount_factor}
 """
         )
 
@@ -130,21 +147,35 @@ NN parameters:
         self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
 
     def publish_internal_state(self) -> None:
-        msg = QLearningInternalState()
-        msg.param_a = self.arm_states
-        msg.param_b = self.hand_states
-        msg.timestamp = datetime.now().isoformat()
-        self.internal_state_publisher.publish(msg)
+        msg = NNInternalState()
+        msg.arm_states = self.arm_states
+        msg.hand_states = self.hand_states
+        msg.arm_step = self.arm_step
+        msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
+        msg.explor_rate = self.explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
+        msg.min_explor_rate = self.min_explor_rate
+        msg.discount_factor = self.discount_factor
+
+        msg.hidden_count = self.hidden_count
+        msg.hidden_width = self.hidden_width
+        msg.hidden_activation = self.hidden_activation
+        msg.output_activation = self.output_activation
+        msg.optimizer = self.optimizer
+        msg.last_predicts = self.last_predicts
+
+        self.internals_publisher.publish(msg)
 
     def stop(self, _) -> None:
         self.get_logger().info("Shutting down Neural Network node")
         self.destroy_node()
 
-    def set_arm_pos(self, msg) -> None:
-        self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
+    def receive_arm_pos(self, msg) -> None:
+        self.curr_arm_state = int(msg.data * self.arm_states / ARM_RANGE)
 
-    def set_hand_pos(self, msg) -> None:
-        self.curr_hand_state = int(msg.data * self.hand_states / HAND_MOTOR_RANGE)
+    def receive_hand_pos(self, msg) -> None:
+        self.curr_hand_state = int(msg.data * self.hand_states / HAND_RANGE)
 
     def get_reward(self, msg) -> None:
         self.learn(msg.data)
@@ -174,13 +205,12 @@ NN parameters:
         return Move(move)
 
     def learn(self, rw: StateReward) -> None:
-        target = rw.reward + self.discount_factor * np.max(self.last_predicts)
+        target = self.discount_factor * np.max(self.last_predicts) + rw.reward
         target_vector = self.last_predicts[0]
         target_vector[self.last_move] = target
         model.fit(
             (self.curr_arm_state, self.curr_hand_state),
-            target_vector.reshape(-1, self.moves_count),
-            epochs=1,
+            target_vector.reshape(-1, MOVES_COUNT),
         )
 
 
