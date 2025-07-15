@@ -7,7 +7,7 @@ from crawler_msgs.msg import (  # type: ignore
     NNInternalState,
     StateReward,
 )
-from keras import layers, model
+from keras import layers, models
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
@@ -106,10 +106,9 @@ class NeuralNetworkNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        self.model = model.Sequential()
-        self.model.add(
-            layers.InputLayer(batch_input_shape=(self.arm_states, self.hand_states))
-        )
+        self.model = models.Sequential()
+        motors = 2
+        self.model.add(layers.InputLayer(input_shape=(motors,)))
         for _ in range(self.hidden_count):
             self.model.add(
                 layers.Dense(self.hidden_width, activation=self.hidden_activation)
@@ -158,7 +157,7 @@ NN parameters:
         msg.hidden_activation = self.hidden_activation
         msg.output_activation = self.output_activation
         msg.optimizer = self.optimizer
-        msg.last_predicts = self.last_predicts
+        msg.last_predicts = self.last_predicts.flatten()
 
         self.internals_publisher.publish(msg)
 
@@ -190,11 +189,12 @@ NN parameters:
 
     def pick_move(self) -> Move:
         if rand.random() < self.explor_rate:
-            something_new = rand.choice(np.array(Move))
+            something_new = rand.choice(np.array(list(Move)))
             self.get_logger().info(f"Randomly selected move {something_new}")
             return something_new
 
-        self.last_predicts = model.predict((self.curr_arm_state, self.curr_hand_state))
+        arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
+        self.last_predicts = self.model.predict(arr)
         move = np.argmax(self.last_predicts)
         self.get_logger().info(f"Selected move {move}")
         return Move(move)
@@ -202,15 +202,12 @@ NN parameters:
     def learn(self, rw: StateReward) -> None:
         target = self.discount_factor * np.max(self.last_predicts) + rw.reward
         target_vector = self.last_predicts[0]
-        target_vector[self.last_move] = target
-        model.fit(
-            (self.curr_arm_state, self.curr_hand_state),
-            target_vector.reshape(-1, MOVES_COUNT),
-        )
+        target_vector[self.last_move.value] = target
+        arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
+        self.model.fit(arr, target_vector.reshape(-1, MOVES_COUNT))
 
         self.explor_rate *= self.explor_decay_factor
         self.explor_rate = max(self.min_explor_rate, self.explor_rate)
-
 
 
 def main(args=None):

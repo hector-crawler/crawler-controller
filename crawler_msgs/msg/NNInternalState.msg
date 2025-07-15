@@ -12,4 +12,4 @@ int32 hidden_width
 string hidden_activation
 string output_activation
 string optimizer
-float64[] latest_predicts
+float64[] last_predicts
