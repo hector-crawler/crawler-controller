@@ -1,11 +1,10 @@
-import random
 import time
+
 import rclpy
+from crawler_msgs.msg import Action, QLearningInternalState, StateReward  # type: ignore
+from numpy import random
 from rclpy.node import Node
-from std_msgs.msg import Empty
-import torch
-import torch.random
-from crawler_msgs.msg import StateReward, Action, QLearningInternalState  # type: ignore
+from std_msgs.msg import Empty  # type: ignore
 
 
 class MockQLearningNode(Node):
@@ -15,42 +14,61 @@ class MockQLearningNode(Node):
         # parameters
 
         self.declare_parameter("arm_states", 3)
-        self.arm_states = self.get_parameter("arm_states").get_parameter_value().integer_value
+        self.arm_states = (
+            self.get_parameter("arm_states").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("hand_states", 3)
-        self.hand_states = self.get_parameter("hand_states").get_parameter_value().integer_value
+        self.hand_states = (
+            self.get_parameter("hand_states").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("arm_step", 200)
-        self.arm_step = self.get_parameter("arm_step").get_parameter_value().integer_value
+        self.arm_step = (
+            self.get_parameter("arm_step").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("hand_step", 200)
-        self.hand_step = self.get_parameter("hand_step").get_parameter_value().integer_value
+        self.hand_step = (
+            self.get_parameter("hand_step").get_parameter_value().integer_value
+        )
 
         self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate = self.get_parameter("learning_rate").get_parameter_value().double_value
+        self.learning_rate = (
+            self.get_parameter("learning_rate").get_parameter_value().double_value
+        )
 
         self.declare_parameter("explor_rate", 1.0)
-        self.explor_rate = self.get_parameter("explor_rate").get_parameter_value().double_value
+        self.explor_rate = (
+            self.get_parameter("explor_rate").get_parameter_value().double_value
+        )
 
-        self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate = self.get_parameter("explor_decay_rate").get_parameter_value().double_value
-
-        self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate = self.get_parameter("max_explor_rate").get_parameter_value().double_value
+        self.declare_parameter("explor_decay_factor", 0.05)
+        self.explor_decay_factor = (
+            self.get_parameter("explor_decay_factor").get_parameter_value().double_value
+        )
 
         self.declare_parameter("min_explor_rate", 0.01)
-        self.min_explor_rate = self.get_parameter("min_explor_rate").get_parameter_value().double_value
+        self.min_explor_rate = (
+            self.get_parameter("min_explor_rate").get_parameter_value().double_value
+        )
 
         self.declare_parameter("discount_factor", 0.99)
-        self.discount_factor = self.get_parameter("discount_factor").get_parameter_value().double_value
+        self.discount_factor = (
+            self.get_parameter("discount_factor").get_parameter_value().double_value
+        )
 
         # q table
-        self.q_table = torch.rand(self.arm_states, self.hand_states, 4)
+        self.q_table = random.rand(self.arm_states, self.hand_states, 4)
 
         # subscribers/publishers
-        self.internals_publisher = self.create_publisher(QLearningInternalState, "/crawler/rl/q_learning/internals", 5)
+        self.internals_publisher = self.create_publisher(
+            QLearningInternalState, "/crawler/rl/q_learning/internals", 5
+        )
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, 5)
-        self.create_subscription(StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5)
+        self.create_subscription(
+            StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5
+        )
         self.action_publisher = self.create_publisher(Action, "/crawler/rl/action", 5)
 
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
@@ -60,7 +78,7 @@ class MockQLearningNode(Node):
     def stop(self, _):
         self.get_logger().info("Shutting down mock Q-learning node")
         self.destroy_node()
-    
+
     def receive_state_reward(self, _):
         # randomly change a value in the Q-table
         row = random.randint(0, self.arm_states - 1)
@@ -87,8 +105,7 @@ class MockQLearningNode(Node):
         msg.hand_step = self.hand_step
         msg.learning_rate = self.learning_rate
         msg.explor_rate = self.explor_rate
-        msg.explor_decay_rate = self.explor_decay_rate
-        msg.max_explor_rate = self.max_explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
         msg.min_explor_rate = self.min_explor_rate
         msg.discount_factor = self.discount_factor
 
@@ -100,7 +117,7 @@ class MockQLearningNode(Node):
         msg.q_table_cols = []
         for i_action in range(4):
             msg.q_table_cols.append(f"action {i_action}")
-        
+
         msg.q_table_values = self.q_table.flatten().tolist()
 
         self.internals_publisher.publish(msg)
