@@ -48,10 +48,6 @@ class NeuralNetworkNode(Node):
             self.get_parameter("inner_layer_count").get_parameter_value().integer_value
         )
 
-        self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate: float = (
-            self.get_parameter("learning_rate").get_parameter_value().double_value
-        )
         self.declare_parameter("explor_rate", 1.0)
         self.explor_rate: float = (
             self.get_parameter("explor_rate").get_parameter_value().double_value
@@ -152,7 +148,6 @@ NN parameters:
         msg.hand_states = self.hand_states
         msg.arm_step = self.arm_step
         msg.hand_step = self.hand_step
-        msg.learning_rate = self.learning_rate
         msg.explor_rate = self.explor_rate
         msg.explor_decay_factor = self.explor_decay_factor
         msg.min_explor_rate = self.min_explor_rate
@@ -212,6 +207,10 @@ NN parameters:
             (self.curr_arm_state, self.curr_hand_state),
             target_vector.reshape(-1, MOVES_COUNT),
         )
+
+        self.explor_rate *= self.explor_decay_factor
+        self.explor_rate = max(self.min_explor_rate, self.explor_rate)
+
 
 
 def main(args=None):
