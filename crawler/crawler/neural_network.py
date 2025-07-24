@@ -8,6 +8,7 @@ from crawler_msgs.msg import (  # type: ignore
     StateReward,
 )
 from keras import layers, models
+from keras.optimizers import Adam
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
@@ -48,6 +49,10 @@ class NeuralNetworkNode(Node):
             self.get_parameter("inner_layer_count").get_parameter_value().integer_value
         )
 
+        self.declare_parameter("learning_rate", 0.01)
+        self.learning_rate: float = (
+            self.get_parameter("learning_rate").get_parameter_value().double_value
+        )
         self.declare_parameter("explor_rate", 1.0)
         self.explor_rate: float = (
             self.get_parameter("explor_rate").get_parameter_value().double_value
@@ -65,10 +70,6 @@ class NeuralNetworkNode(Node):
             self.get_parameter("discount_factor").get_parameter_value().double_value
         )
 
-        self.declare_parameter("optimizer", "adam")
-        self.optimizer: str = (
-            self.get_parameter("optimizer").get_parameter_value().string_value
-        )
         self.declare_parameter("hidden_activation", "relu")
         self.hidden_activation: str = (
             self.get_parameter("hidden_activation").get_parameter_value().string_value
@@ -114,7 +115,11 @@ class NeuralNetworkNode(Node):
                 layers.Dense(self.hidden_width, activation=self.hidden_activation)
             )
         self.model.add(layers.Dense(MOVES_COUNT, activation=self.output_activation))
-        self.model.compile(loss="mse", optimizer=self.optimizer, metrics=["mae"])
+
+        self.optimizer: Adam = Adam(learning_rate=self.learning_rate)
+        self.model.compile(optimizer=self.optimizer)
+        # Alternative call with some defaults from https://www.baeldung.com/cs/reinforcement-learning-neural-network:
+        # self.model.compile(loss="mse", optimizer=self.optimizer, metrics=["mae"])
 
         self.last_predicts: np.ndarray = np.array([])
 
@@ -129,8 +134,8 @@ NN parameters:
     Hidden layer width = {self.hidden_width}
     Hidden layer activation = {self.hidden_activation}
     Output layer activation = {self.output_activation}
-    Optimizer = {self.optimizer}
 
+    Learning rate = {self.learning_rate}
     Exploration rate = {self.explor_rate}
     Exploration decay factor = {self.explor_decay_factor}
     Min exploration rate = {self.min_explor_rate}
@@ -147,6 +152,7 @@ NN parameters:
         msg.hand_states = self.hand_states
         msg.arm_step = self.arm_step
         msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
         msg.explor_rate = self.explor_rate
         msg.explor_decay_factor = self.explor_decay_factor
         msg.min_explor_rate = self.min_explor_rate
@@ -156,7 +162,6 @@ NN parameters:
         msg.hidden_width = self.hidden_width
         msg.hidden_activation = self.hidden_activation
         msg.output_activation = self.output_activation
-        msg.optimizer = self.optimizer
         msg.last_predicts = self.last_predicts.flatten()
 
         self.internals_publisher.publish(msg)

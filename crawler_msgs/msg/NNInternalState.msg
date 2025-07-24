@@ -2,6 +2,7 @@ int32 arm_states
 int32 hand_states
 int32 arm_step
 int32 hand_step
+float64 learning_rate
 float64 explor_rate
 float64 explor_decay_factor
 float64 min_explor_rate
@@ -11,5 +12,4 @@ int32 hidden_count
 int32 hidden_width
 string hidden_activation
 string output_activation
-string optimizer
 float64[] last_predicts
