@@ -13,7 +13,7 @@ import rclpy
 import rclpy.logging
 from rclpy.node import Node
 from std_msgs.msg import Empty, Bool, Int32
-from crawler_msgs.msg import RLEnvironmentInternals, QLearningInternalState  # type: ignore
+from crawler_msgs.msg import RLEnvironmentInternals, QLearningParameters, QLearningInternalState  # type: ignore
 
 
 # ROS nodes
@@ -36,6 +36,7 @@ class WebApiPublisher(Node):
         self.right_encoder_mock_publisher = self.create_publisher(
             Int32, "/crawler/right_encoder/mock", 5
         )
+        self.q_learning_start_publisher = self.create_publisher(QLearningParameters, "/crawler/rl/q_learning/start", 5)
         self.rl_stop_publisher = self.create_publisher(Empty, "/crawler/rl/stop", 5)
 
     def blinker_toggle(self):
@@ -57,19 +58,16 @@ class WebApiPublisher(Node):
         self.right_encoder_mock_publisher.publish(Int32(data=position))
 
     def start_rl_q_learning(self, hand_states: int, arm_states: int, learning_rate: float, explor_rate: float, explor_decay_rate: float, max_explor_rate: float, min_explor_rate: float, discount_factor: float):
-        subprocess.Popen(
-            f"ros2 run crawler crawler_q_learning --ros-args "
-            f"-p hand_states:={hand_states} "
-            f"-p arm_states:={arm_states} "
-            f"-p learning_rate:={learning_rate} "
-            f"-p explor_rate:={explor_rate} "
-            f"-p explor_decay_rate:={explor_decay_rate} "
-            f"-p max_explor_rate:={max_explor_rate} "
-            f"-p min_explor_rate:={min_explor_rate} "
-            f"-p discount_factor:={discount_factor}",
-            shell=True
-        )
-        self.get_logger().info(f"Starting Q-learning")
+        self.q_learning_start_publisher.publish(QLearningParameters(
+            hand_states=hand_states,
+            arm_states=arm_states,
+            learning_rate=learning_rate,
+            explor_rate=explor_rate,
+            explor_decay_rate=explor_decay_rate,
+            max_explor_rate=max_explor_rate,
+            min_explor_rate=min_explor_rate,
+            discount_factor=discount_factor
+        ))
 
     def stop_rl(self):
         self.rl_stop_publisher.publish(Empty())

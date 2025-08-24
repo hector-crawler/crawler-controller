@@ -4,64 +4,54 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Empty
 import torch
-import torch.random
-from crawler_msgs.msg import StateReward, Action, QLearningInternalState  # type: ignore
+from crawler_msgs.msg import StateReward, Action, QLearningParameters, QLearningInternalState  # type: ignore
 
 
 class MockQLearningNode(Node):
     def __init__(self):
-        super().__init__("crawler_mock_q_learning")
+        super().__init__("crawler_mock_q_learning")    
 
-        # parameters
+        self.running = False    
 
-        self.declare_parameter("arm_states", 3)
-        self.arm_states = self.get_parameter("arm_states").get_parameter_value().integer_value
-
-        self.declare_parameter("hand_states", 3)
-        self.hand_states = self.get_parameter("hand_states").get_parameter_value().integer_value
-
-        self.declare_parameter("arm_step", 200)
-        self.arm_step = self.get_parameter("arm_step").get_parameter_value().integer_value
-
-        self.declare_parameter("hand_step", 200)
-        self.hand_step = self.get_parameter("hand_step").get_parameter_value().integer_value
-
-        self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate = self.get_parameter("learning_rate").get_parameter_value().double_value
-
-        self.declare_parameter("explor_rate", 1.0)
-        self.explor_rate = self.get_parameter("explor_rate").get_parameter_value().double_value
-
-        self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate = self.get_parameter("explor_decay_rate").get_parameter_value().double_value
-
-        self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate = self.get_parameter("max_explor_rate").get_parameter_value().double_value
-
-        self.declare_parameter("min_explor_rate", 0.01)
-        self.min_explor_rate = self.get_parameter("min_explor_rate").get_parameter_value().double_value
-
-        self.declare_parameter("discount_factor", 0.99)
-        self.discount_factor = self.get_parameter("discount_factor").get_parameter_value().double_value
-
-        # q table
-        self.q_table = torch.rand(self.arm_states, self.hand_states, 4)
+        # start subscriber
+        self.create_subscription(QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5)
 
         # subscribers/publishers
         self.internals_publisher = self.create_publisher(QLearningInternalState, "/crawler/rl/q_learning/internals", 5)
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, 5)
         self.create_subscription(StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5)
         self.action_publisher = self.create_publisher(Action, "/crawler/rl/action", 5)
+    
+    def start(self, parameters):
+        # parameters
+        self.arm_states = parameters.arm_states
+        self.hand_states = parameters.hand_states
+        self.arm_step = parameters.arm_step
+        self.hand_step = parameters.hand_step
+        self.learning_rate = parameters.learning_rate
+        self.explor_rate = parameters.explor_rate
+        self.explor_decay_rate = parameters.explor_decay_rate
+        self.max_explor_rate = parameters.max_explor_rate
+        self.min_explor_rate = parameters.min_explor_rate
+        self.discount_factor = parameters.discount_factor
 
+        # q table
+        self.q_table = torch.rand(self.arm_states, self.hand_states, 4)
+
+        # send start signal to environment
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
 
+        self.running = True
         self.publish_internals()
 
     def stop(self, _):
-        self.get_logger().info("Shutting down mock Q-learning node")
-        self.destroy_node()
+        self.get_logger().info("Stopping mock Q-learning node")
+        self.running = False
     
     def receive_state_reward(self, _):
+        if not self.running:
+            return
+
         # randomly change a value in the Q-table
         row = random.randint(0, self.arm_states - 1)
         col = random.randint(0, self.hand_states - 1)

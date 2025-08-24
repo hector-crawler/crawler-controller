@@ -19,6 +19,6 @@
 
     <node pkg="crawler" exec="crawler_rl_environment"></node>
 
-    <!-- crawler_q_learning, ... nodes are started by crawler_web_api -->
+    <node pkg="crawler" exec="crawler_q_learning"></node>
  
 </launch>
