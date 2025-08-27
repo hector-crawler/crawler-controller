@@ -30,6 +30,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Action.msg"
   "msg/QLearningParameters.msg"
   "msg/QLearningInternalState.msg"
+  "msg/NNInternalState.msg"
   "msg/RLEnvironmentInternals.msg"
   # DEPENDENCIES std_msgs  # Uncomment if using types from other packages
 )

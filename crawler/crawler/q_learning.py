@@ -1,7 +1,4 @@
-import datetime
-import random as rand
-from enum import Enum
-
+import numpy as np
 import rclpy
 import torch
 from crawler_msgs.msg import (
@@ -9,44 +6,29 @@ from crawler_msgs.msg import (
     QLearningParameters, # type: ignore
     QLearningInternalState, # type: ignore
     StateReward, # type: ignore
+from crawler_msgs.msg import (  # type: ignore
+     Action,
+     QLearningInternalState,
+     StateReward,
 )
+from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32 
+from std_msgs.msg import Empty, Int32  # type: ignore
 
-from .motors import Arm, Hand
-
-ARM_MOTOR_RANGE = Arm.max_limit - Arm.min_limit
-HAND_MOTOR_RANGE = Hand.max_limit - Hand.min_limit
-
-
-class Move(Enum):
-    ARM_UP = 1
-    ARM_DOWN = 2
-    HAND_UP = 3
-    HAND_DOWN = 4
+from .motors import ARM_RANGE, HAND_RANGE
+from .move import MOVES_COUNT, Move
 
 
 class QLearningNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_q_learning")
 
-        self.arm_states = 0
-        self.hand_states = 0
-        self.arm_step = 0
-        self.hand_step = 0
-        self.learning_rate = 0.0
-        self.explor_rate = 0.0
-        self.explor_decay_rate = 0.0
-        self.max_explor_rate = 0.0
-        self.min_explor_rate = 0.0
-        self.discount_factor = 0.0
-
         # start subscriber
         self.running = False
         self.create_subscription(QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5)
 
         queue_len = 5
-        self.internal_state_publisher = self.create_publisher(
+        self.internals_publisher = self.create_publisher(
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
         self.create_timer(1.0, self.publish_internal_state)
@@ -57,32 +39,28 @@ class QLearningNode(Node):
         )
 
         self.create_subscription(
-            Int32, "/crawler/arm/position", self.set_arm_pos, queue_len
+            Int32, "/crawler/arm/position", self.receive_arm_pos, queue_len
         )
         self.create_subscription(
-            Int32, "/crawler/hand/position", self.set_hand_pos, queue_len
+            Int32, "/crawler/hand/position", self.receive_hand_pos, queue_len
         )
 
         self.action_publisher = self.create_publisher(
             Action, "/crawler/rl/action", queue_len
         )
 
-        self.moves_count = len(Move)
         self.last_move = Move.ARM_UP
         self.curr_arm_state = 0
         self.curr_hand_state = 0
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        """ # We might also want to use torch.rand() for initialization.
-        self.q_table = torch.zeros(
+        self.q_table = np.zeros(
             # At this point we might also think about adding another dimension for self.last_move
-            [self.arm_states, self.hand_states, self.moves_count]
+            [self.arm_states, self.hand_states, MOVES_COUNT]
             # We might also want to investigate changing the dtype parameter for our usecase.
             # https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype
-        ) """
-
-        self.q_table = torch.rand(self.arm_states, self.hand_states, 4)
+        ) 
     
     def start(self, parameters):
         if self.running:
@@ -106,23 +84,24 @@ class QLearningNode(Node):
 Q-learning parameters:
     Arm states = {self.arm_states}
     Hand states = {self.hand_states}
-    No. of Moves = {self.moves_count}
+    No. of Moves = {MOVES_COUNT}
+    Q-Table size = {self.arm_states}x{self.hand_states}x{MOVES_COUNT} = {self.arm_states * self.hand_states * MOVES_COUNT} cells
 
     Exploration rate = {self.explor_rate}
-    Exploration decay rate = {self.explor_decay_rate}
+    Exploration decay factor = {self.explor_decay_factor}
     Min exploration rate = {self.min_explor_rate}
-    Max exploration rate = {self.max_explor_rate}
+    Discount factor = {self.discount_factor}
 """
         )
 
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
 
-    def set_arm_pos(self, msg) -> None:
-        self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
+    def receive_arm_pos(self, msg) -> None:
+        self.curr_arm_state = int(msg.data * self.arm_states / ARM_RANGE)
 
-    def set_hand_pos(self, msg) -> None:
-        self.curr_hand_state = int(msg.data * self.hand_states / HAND_MOTOR_RANGE)
+    def receive_hand_pos(self, msg) -> None:
+        self.curr_hand_state = int(msg.data * self.hand_states / HAND_RANGE)
 
     def send_move(self, m: Move) -> None:
         match m:
@@ -136,39 +115,38 @@ Q-learning parameters:
                 self.action_publisher.publish(Action(0, -self.hand_step))
 
     def pick_move(self) -> Move:
-        if rand.uniform(0, 1) < self.explor_rate:
-            something_new = rand.choice(list(Move))
+        if rand.random() < self.explor_rate:
+            something_new = rand.choice(np.array(Move))
+            self.get_logger().info(f"Randomly selected move {something_new}")
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
-        move_idx = torch.argmax(pool).item() + 1
+        move_idx = np.argmax(pool).item()
         move = Move(move_idx)
+        self.get_logger().info(f"Selected move {move}")
         return move
 
     def get_reward(self, msg) -> None:
-        reward = msg.reward
-        self.learn(reward)
-        m = self.pick_move()
-        self.last_move = m
-        self.send_move(m)
+        self.learn(msg)
+        self.last_move = self.pick_move()
+        self.send_move(self.last_move)
 
     def learn(self, rw: StateReward) -> None:
-        idx = [
-            self.last_arm_state,
-            self.last_hand_state,
-            self.last_move.value - 1,
-        ]
+        idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
         predicted_value = self.q_table[idx]
         target_value = (
-            rw.reward
-            + self.discount_factor
-            * self.q_table[self.curr_arm_state, self.curr_hand_state].max()
+            self.q_table[self.curr_arm_state, self.curr_hand_state].max()
+            * self.discount_factor
+            + rw.reward
         )
         self.q_table[idx] = predicted_value + self.learning_rate * (
             target_value - predicted_value
         )
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
+
+        self.explor_rate *= self.explor_decay_factor
+        self.explor_rate = max(self.min_explor_rate, self.explor_rate)
 
     def publish_internal_state(self) -> None:
         if not self.running:
@@ -181,8 +159,7 @@ Q-learning parameters:
         msg.hand_step = self.hand_step
         msg.learning_rate = self.learning_rate
         msg.explor_rate = self.explor_rate
-        msg.explor_decay_rate = self.explor_decay_rate
-        msg.max_explor_rate = self.max_explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
         msg.min_explor_rate = self.min_explor_rate
         msg.discount_factor = self.discount_factor
 
@@ -192,13 +169,12 @@ Q-learning parameters:
                 msg.q_table_rows.append(f"{i_arm}x{i_hand}")
 
         msg.q_table_cols = []
-        for i_action in range(4):
+        for i_action in range(MOVES_COUNT):
             msg.q_table_cols.append(f"action {i_action}")
-        
+
         msg.q_table_values = self.q_table.flatten().tolist()
-        
-        # msg.timestamp = datetime.datetime.now().isoformat() # todo: reintroduce this?
-        self.internal_state_publisher.publish(msg)
+
+        self.internals_publisher.publish(msg)
 
     def stop(self, _) -> None:
         if not self.running:

@@ -1,27 +1,40 @@
-import random
 import time
+
 import rclpy
+import torch  # type: ignore
+import torch.random  # type: ignore
+from crawler_msgs.msg import (  # type: ignore
+    Action,
+    QLearningInternalState,
+    QLearningParameters,  # type: ignore
+    StateReward,
+)
+from numpy import random
 from rclpy.node import Node
-from std_msgs.msg import Empty
-import torch
-from crawler_msgs.msg import StateReward, Action, QLearningParameters, QLearningInternalState  # type: ignore
+from std_msgs.msg import Empty  # type: ignore
 
 
 class MockQLearningNode(Node):
     def __init__(self):
-        super().__init__("crawler_mock_q_learning")    
+        super().__init__("crawler_mock_q_learning")
 
-        self.running = False    
+        self.running = False
 
         # start subscriber
-        self.create_subscription(QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5)
+        self.create_subscription(
+            QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5
+        )
 
         # subscribers/publishers
-        self.internals_publisher = self.create_publisher(QLearningInternalState, "/crawler/rl/q_learning/internals", 5)
+        self.internals_publisher = self.create_publisher(
+            QLearningInternalState, "/crawler/rl/q_learning/internals", 5
+        )
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, 5)
-        self.create_subscription(StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5)
+        self.create_subscription(
+            StateReward, "/crawler/rl/state_reward", self.receive_state_reward, 5
+        )
         self.action_publisher = self.create_publisher(Action, "/crawler/rl/action", 5)
-    
+
     def start(self, parameters):
         # parameters
         self.arm_states = parameters.arm_states
@@ -47,7 +60,7 @@ class MockQLearningNode(Node):
     def stop(self, _):
         self.get_logger().info("Stopping mock Q-learning node")
         self.running = False
-    
+
     def receive_state_reward(self, _):
         if not self.running:
             return
@@ -77,8 +90,7 @@ class MockQLearningNode(Node):
         msg.hand_step = self.hand_step
         msg.learning_rate = self.learning_rate
         msg.explor_rate = self.explor_rate
-        msg.explor_decay_rate = self.explor_decay_rate
-        msg.max_explor_rate = self.max_explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
         msg.min_explor_rate = self.min_explor_rate
         msg.discount_factor = self.discount_factor
 
@@ -90,7 +102,7 @@ class MockQLearningNode(Node):
         msg.q_table_cols = []
         for i_action in range(4):
             msg.q_table_cols.append(f"action {i_action}")
-        
+
         msg.q_table_values = self.q_table.flatten().tolist()
 
         self.internals_publisher.publish(msg)
