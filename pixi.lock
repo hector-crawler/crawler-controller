@@ -735,6 +735,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-markupsafe-1.1.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-setuptools-79.0.0.20250422-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-werkzeug-1.0.9-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/typescript-language-server-4.3.4-hede6621_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda
@@ -1530,6 +1531,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-markupsafe-1.1.10-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-setuptools-79.0.0.20250422-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-werkzeug-1.0.9-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/typescript-language-server-4.3.4-hede6621_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda
@@ -24126,6 +24128,15 @@ packages:
   - pkg:pypi/types-werkzeug?source=hash-mapping
   size: 39468
   timestamp: 1735571164066
+- conda: https://conda.anaconda.org/conda-forge/noarch/typescript-language-server-4.3.4-hede6621_0.conda
+  sha256: 98d525bb1486656b74af1b10465f471b7b2436e035278270f7803ab27d1aa166
+  md5: 9cc15c7c6dba3ece53bfa99d829fe023
+  depends:
+  - nodejs
+  license: MIT AND Apache-2.0
+  purls: []
+  size: 420622
+  timestamp: 1740603617097
 - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
   sha256: 7c2df5721c742c2a47b2c8f960e718c930031663ac1174da67c1ed5999f7938c
   md5: edd329d7d3a4ab45dcf905899a7a6115
