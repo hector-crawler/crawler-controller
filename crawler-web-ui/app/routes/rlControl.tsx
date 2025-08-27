@@ -100,8 +100,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
     handStep: 299,
     learningRate: 0.5,
     explorationRate: 1.0,
-    explorationDecayRate: 0.05,
-    maxExplorationRate: 0.5,
+    explorationDecayFactor: 0.95,
     minExplorationRate: 0.01,
     discountFactor: 0.99,
   })
@@ -131,10 +130,9 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
           <InputField type="number" label="learning rate" value={configuration.learningRate} onChange={str => setConfiguration(config => ({ ...config, learningRate: Number(str) }))} />
           <div className="flex gap-2">
             <InputField type="number" label="exploration rate" value={configuration.explorationRate} onChange={str => setConfiguration(config => ({ ...config, explorationRate: Number(str) }))} />
-            <InputField type="number" label="exploration decay rate" value={configuration.explorationDecayRate} onChange={str => setConfiguration(config => ({ ...config, explorationDecayRate: Number(str) }))} />
+            <InputField type="number" label="exploration decay factor" value={configuration.explorationDecayFactor} onChange={str => setConfiguration(config => ({ ...config, explorationDecayFactor: Number(str) }))} />
           </div>
           <div className="flex gap-2">
-            <InputField type="number" label="max exploration rate" value={configuration.maxExplorationRate} onChange={str => setConfiguration(config => ({ ...config, maxExplorationRate: Number(str) }))} />
             <InputField type="number" label="min exploration rate" value={configuration.minExplorationRate} onChange={str => setConfiguration(config => ({ ...config, minExplorationRate: Number(str) }))} />
           </div>
           <InputField type="number" label="discount factor" value={configuration.discountFactor} onChange={str => setConfiguration(config => ({ ...config, discountFactor: Number(str) }))} />
@@ -164,7 +162,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
               "hand step": rlInternals.qLearning.handStep,
               "learning rate": rlInternals.qLearning.learningRate,
               "exploration rate": rlInternals.qLearning.explorationRate,
-              "exploration decay rate": rlInternals.qLearning.explorationDecayRate,
+              "exploration decay factor": rlInternals.qLearning.explorationDecayFactor,
               "discount factor": rlInternals.qLearning.discountFactor,
             }} />
           </div>

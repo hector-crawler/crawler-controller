@@ -43,8 +43,7 @@ class MockQLearningNode(Node):
         self.hand_step = parameters.hand_step
         self.learning_rate = parameters.learning_rate
         self.explor_rate = parameters.explor_rate
-        self.explor_decay_rate = parameters.explor_decay_rate
-        self.max_explor_rate = parameters.max_explor_rate
+        self.explor_decay_factor = parameters.explor_decay_factor
         self.min_explor_rate = parameters.min_explor_rate
         self.discount_factor = parameters.discount_factor
 

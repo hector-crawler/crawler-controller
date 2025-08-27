@@ -7,8 +7,8 @@ from crawler_msgs.msg import (  # type: ignore
     NNInternalState,
     StateReward,
 )
-from keras import layers, models
-from keras.optimizers import Adam
+from keras import layers, models  # type: ignore
+from keras.optimizers import Adam  # type: ignore
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore

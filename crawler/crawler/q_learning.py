@@ -1,15 +1,10 @@
 import numpy as np
 import rclpy
-import torch
-from crawler_msgs.msg import (
-    Action, # type: ignore
-    QLearningParameters, # type: ignore
-    QLearningInternalState, # type: ignore
-    StateReward, # type: ignore
 from crawler_msgs.msg import (  # type: ignore
-     Action,
-     QLearningInternalState,
-     StateReward,
+    Action,
+    QLearningInternalState,
+    QLearningParameters,
+    StateReward,
 )
 from numpy import random as rand
 from rclpy.node import Node
@@ -25,7 +20,9 @@ class QLearningNode(Node):
 
         # start subscriber
         self.running = False
-        self.create_subscription(QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5)
+        self.create_subscription(
+            QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5
+        )
 
         queue_len = 5
         self.internals_publisher = self.create_publisher(
@@ -58,10 +55,8 @@ class QLearningNode(Node):
         self.q_table = np.zeros(
             # At this point we might also think about adding another dimension for self.last_move
             [self.arm_states, self.hand_states, MOVES_COUNT]
-            # We might also want to investigate changing the dtype parameter for our usecase.
-            # https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype
-        ) 
-    
+        )
+
     def start(self, parameters):
         if self.running:
             self.get_logger().info("Q-learning node is already running!")
@@ -74,8 +69,7 @@ class QLearningNode(Node):
         self.hand_step = parameters.hand_step
         self.learning_rate = parameters.learning_rate
         self.explor_rate = parameters.explor_rate
-        self.explor_decay_rate = parameters.explor_decay_rate
-        self.max_explor_rate = parameters.max_explor_rate
+        self.explor_decay_factor = parameters.explor_decay_factor
         self.min_explor_rate = parameters.min_explor_rate
         self.discount_factor = parameters.discount_factor
 
@@ -126,7 +120,7 @@ Q-learning parameters:
         self.get_logger().info(f"Selected move {move}")
         return move
 
-    def get_reward(self, msg) -> None:
+    def get_reward(self, msg: StateReward) -> None:
         self.learn(msg)
         self.last_move = self.pick_move()
         self.send_move(self.last_move)

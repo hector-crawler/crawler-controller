@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 
-import subprocess
-from flask import Flask, send_file, request
-from flask_cors import CORS
-from flask_sock import Sock
 import json
-import os
 import logging
+import os
 from threading import Thread
 
 import rclpy
 import rclpy.logging
+from crawler_msgs.msg import (  # type: ignore
+    QLearningInternalState,
+    QLearningParameters,
+    RLEnvironmentInternals,
+)
+from flask import Flask, request, send_file
+from flask_cors import CORS
+from flask_sock import Sock  # type: ignore
 from rclpy.node import Node
-from std_msgs.msg import Empty, Bool, Int32
-from crawler_msgs.msg import RLEnvironmentInternals, QLearningParameters, QLearningInternalState  # type: ignore
-
+from std_msgs.msg import Bool, Empty, Int32  # type: ignore
 
 # ROS nodes
+
 
 class WebApiPublisher(Node):
     def __init__(self):
@@ -36,7 +39,9 @@ class WebApiPublisher(Node):
         self.right_encoder_mock_publisher = self.create_publisher(
             Int32, "/crawler/right_encoder/mock", 5
         )
-        self.q_learning_start_publisher = self.create_publisher(QLearningParameters, "/crawler/rl/q_learning/start", 5)
+        self.q_learning_start_publisher = self.create_publisher(
+            QLearningParameters, "/crawler/rl/q_learning/start", 5
+        )
         self.rl_stop_publisher = self.create_publisher(Empty, "/crawler/rl/stop", 5)
 
     def blinker_toggle(self):
@@ -57,22 +62,32 @@ class WebApiPublisher(Node):
     def right_encoder_mock(self, position):
         self.right_encoder_mock_publisher.publish(Int32(data=position))
 
-    def start_rl_q_learning(self, hand_states: int, arm_states: int, learning_rate: float, explor_rate: float, explor_decay_rate: float, max_explor_rate: float, min_explor_rate: float, discount_factor: float):
-        self.q_learning_start_publisher.publish(QLearningParameters(
-            hand_states=hand_states,
-            arm_states=arm_states,
-            learning_rate=learning_rate,
-            explor_rate=explor_rate,
-            explor_decay_rate=explor_decay_rate,
-            max_explor_rate=max_explor_rate,
-            min_explor_rate=min_explor_rate,
-            discount_factor=discount_factor
-        ))
+    def start_rl_q_learning(
+        self,
+        hand_states: int,
+        arm_states: int,
+        learning_rate: float,
+        explor_rate: float,
+        explor_decay_factor: float,
+        min_explor_rate: float,
+        discount_factor: float,
+    ):
+        self.q_learning_start_publisher.publish(
+            QLearningParameters(
+                hand_states=hand_states,
+                arm_states=arm_states,
+                learning_rate=learning_rate,
+                explor_rate=explor_rate,
+                explor_decay_factor=explor_decay_factor,
+                min_explor_rate=min_explor_rate,
+                discount_factor=discount_factor,
+            )
+        )
 
     def stop_rl(self):
         self.rl_stop_publisher.publish(Empty())
         ws_rl_internals.update_state({"qLearning": None})
-        self.get_logger().info(f"Stopping RL")
+        self.get_logger().info("Stopping RL")
 
 
 class WebApiSubscriber(Node):
@@ -88,8 +103,15 @@ class WebApiSubscriber(Node):
         self.create_subscription(
             Int32, "/crawler/right_encoder/position", self.right_encoder_position, 5
         )
-        self.create_subscription(RLEnvironmentInternals, "/crawler/rl/internals", self.rl_internals, 5)
-        self.create_subscription(QLearningInternalState, "/crawler/rl/q_learning/internals", self.rl_q_learning_internals, 5)
+        self.create_subscription(
+            RLEnvironmentInternals, "/crawler/rl/internals", self.rl_internals, 5
+        )
+        self.create_subscription(
+            QLearningInternalState,
+            "/crawler/rl/q_learning/internals",
+            self.rl_q_learning_internals,
+            5,
+        )
 
     def blinker_state(self, msg):
         ws_manual_state.update_state({"blinker": msg.data})
@@ -135,8 +157,7 @@ class WebApiSubscriber(Node):
                     "handStep": msg.hand_step,
                     "learningRate": msg.learning_rate,
                     "explorationRate": msg.explor_rate,
-                    "explorationDecayRate": msg.explor_decay_rate,
-                    "maxExplorationRate": msg.max_explor_rate,
+                    "explorationDecayFactor": msg.explor_decay_factor,
                     "minExplorationRate": msg.min_explor_rate,
                     "discountFactor": msg.discount_factor,
                     "qTableRows": msg.q_table_rows,
@@ -157,8 +178,8 @@ sock = Sock(app)
 logger = logging.getLogger("werkzeug")
 logger.setLevel(logging.WARN)
 
-publisher: WebApiPublisher = None # type: ignore
-subscriber: WebApiSubscriber = None # type: ignore
+publisher: WebApiPublisher = None  # type: ignore
+subscriber: WebApiSubscriber = None  # type: ignore
 
 
 def main(args=None):
@@ -242,18 +263,27 @@ def api_mock_right_encoder():
     publisher.right_encoder_mock(position)
     return "ok"
 
+
 @app.route("/api/rl/start/qLearning", methods=["POST"])
 def api_rl_start():
     arm_states = request.json.get("armStates")
     hand_states = request.json.get("handStates")
     learning_rate = float(request.json.get("learningRate"))
     explor_rate = float(request.json.get("explorationRate"))
-    explor_decay_rate = float(request.json.get("explorationDecayRate"))
-    max_explor_rate = float(request.json.get("maxExplorationRate"))
+    explor_decay_factor = float(request.json.get("explorationDecayFactor"))
     min_explor_rate = float(request.json.get("minExplorationRate"))
     discount_factor = float(request.json.get("discountFactor"))
-    publisher.start_rl_q_learning(arm_states, hand_states, learning_rate, explor_rate, explor_decay_rate, max_explor_rate, min_explor_rate, discount_factor)
+    publisher.start_rl_q_learning(
+        arm_states,
+        hand_states,
+        learning_rate,
+        explor_rate,
+        explor_decay_factor,
+        min_explor_rate,
+        discount_factor,
+    )
     return "ok"
+
 
 @app.route("/api/rl/stop", methods=["POST"])
 def api_rl_stop():
@@ -302,6 +332,7 @@ ws_rl_internals = WebSocketStateBroadcast(
 @sock.route("/api/manual/state")
 def api_blinker_state(ws):
     ws_manual_state.handle_connection(ws)
+
 
 @sock.route("/api/rl/internals")
 def api_rl_internals(ws):
