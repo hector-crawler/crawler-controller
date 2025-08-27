@@ -18,13 +18,14 @@ class QLearningNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_q_learning")
 
+        queue_len = 5
+
         # start subscriber
         self.running = False
         self.create_subscription(
-            QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5
+            QLearningParameters, "/crawler/rl/q_learning/start", self.start, queue_len
         )
 
-        queue_len = 5
         self.internals_publisher = self.create_publisher(
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
@@ -52,10 +53,8 @@ class QLearningNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        self.q_table = np.zeros(
-            # At this point we might also think about adding another dimension for self.last_move
-            [self.arm_states, self.hand_states, MOVES_COUNT]
-        )
+        # At this point we might also think about adding another dimension for self.last_move
+        self.q_table = np.zeros([self.arm_states, self.hand_states, MOVES_COUNT])
 
     def start(self, parameters):
         if self.running:
