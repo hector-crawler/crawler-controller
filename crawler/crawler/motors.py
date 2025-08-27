@@ -27,7 +27,7 @@ class MotorData:
 
 Arm = MotorData("Arm", 6, 900, 1500)
 Hand = MotorData("Hand", 7, 2500, 3300)
-# todo: make the Dynamixel motor IDs a node parameter
+# todo: make the motor IDs and limits a node parameter
 
 ARM_RANGE = Arm.max_limit - Arm.min_limit
 HAND_RANGE = Hand.max_limit - Hand.min_limit
