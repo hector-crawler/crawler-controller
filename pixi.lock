@@ -461,7 +461,6 @@ environments:
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-dummy-map-server-0.33.5-np126py312he556185_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-dummy-robot-bringup-0.33.5-np126py312he556185_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-dummy-sensors-0.33.5-np126py312he556185_5.conda
-      - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-dynamixel-sdk-3.8.3-np126py312he556185_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-eigen3-cmake-module-0.3.0-np126py312he556185_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-example-interfaces-0.12.0-np126py312he556185_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-examples-rclcpp-minimal-action-client-0.19.5-np126py312he556185_5.conda
@@ -790,6 +789,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zziplib-0.13.69-he45264a_2.conda
       - pypi: https://files.pythonhosted.org/packages/cf/cb/70751377d94112001d46c311b5c40b45f34863dfa78a6bc71b71f40c8c7f/cbor2-5.6.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/7e/a6/ddd0f130e44a7593ac6c55aa93f6e256d2270fd88e9d1b64ab7f22ab8fde/colorzero-2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d8/98/107728ce3f430b5481eb426ccc5e1f7c8ab0bd01eaf231c62a8d528ff721/flask_sock-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/02/eb/6518a1b00488d48995034226846653c382d676cf5f04be62b3c3fae2c6a1/gpiozero-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
@@ -1254,7 +1254,6 @@ environments:
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-dummy-map-server-0.33.5-np126py312h306876e_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-dummy-robot-bringup-0.33.5-np126py312h306876e_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-dummy-sensors-0.33.5-np126py312h306876e_5.conda
-      - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-dynamixel-sdk-3.8.3-np126py312h306876e_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-eigen3-cmake-module-0.3.0-np126py312h306876e_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-example-interfaces-0.12.0-np126py312h306876e_5.conda
       - conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-examples-rclcpp-minimal-action-client-0.19.5-np126py312h306876e_5.conda
@@ -1581,6 +1580,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-aarch64/zziplib-0.13.69-h650d8d0_2.conda
       - pypi: https://files.pythonhosted.org/packages/77/ac/5fb79db6e882ec29680f4a974d35c098020a1b4709cad077667a8c3f4676/cbor2-5.6.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
       - pypi: https://files.pythonhosted.org/packages/7e/a6/ddd0f130e44a7593ac6c55aa93f6e256d2270fd88e9d1b64ab7f22ab8fde/colorzero-2.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d8/98/107728ce3f430b5481eb426ccc5e1f7c8ab0bd01eaf231c62a8d528ff721/flask_sock-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/02/eb/6518a1b00488d48995034226846653c382d676cf5f04be62b3c3fae2c6a1/gpiozero-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
@@ -3110,6 +3110,12 @@ packages:
   purls: []
   size: 67140
   timestamp: 1739571636249
+- pypi: https://files.pythonhosted.org/packages/03/e8/2c65d11d312fdb1a2308563d32f63f93c39123bcfb4909d947e0b294c794/dynamixel_sdk-3.7.31-py3-none-any.whl
+  name: dynamixel-sdk
+  version: 3.7.31
+  sha256: 74e8c112ca6b0b869b196dd8c6a44ffd5dd5c1a3cb9fe2030e9933922406b466
+  requires_dist:
+  - pyserial
 - conda: https://conda.anaconda.org/conda-forge/linux-64/eigen-3.4.0-h00ab1b0_0.conda
   sha256: 53b15a98aadbe0704479bacaf7a5618fcb32d1577be320630674574241639b34
   md5: b1b879d6d093f55dd40d58b5eb2f0699
@@ -13391,38 +13397,6 @@ packages:
   license: BSD-3-Clause
   size: 122138
   timestamp: 1744706868676
-- conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-dynamixel-sdk-3.8.3-np126py312he556185_5.conda
-  sha256: 7ce1dac8ee1c7037abeb88e19c7686d159d4c6b3f4dbb76f11a16bcb1f1f6393
-  md5: 828ab7f3e22b9f4cde7911741ebcaa46
-  depends:
-  - python
-  - ros-jazzy-ros-workspace
-  - ros2-distro-mutex 0.8.* jazzy_*
-  - __glibc >=2.17,<3.0.a0
-  - libstdcxx >=13
-  - libgcc >=13
-  - numpy >=1.26.4,<2.0a0
-  - ros2-distro-mutex >=0.8.0,<0.9.0a0
-  - python_abi 3.12.* *_cp312
-  license: BSD-3-Clause
-  size: 120697
-  timestamp: 1744704663108
-- conda: https://conda.anaconda.org/robostack-jazzy/linux-aarch64/ros-jazzy-dynamixel-sdk-3.8.3-np126py312h306876e_5.conda
-  sha256: e45577119f5e5d7914cb50615353c73f4c9a1b4cceb0877de81dc5ccebf97081
-  md5: d9ec14cb892b4093bd945c412001bef6
-  depends:
-  - python
-  - ros-jazzy-ros-workspace
-  - ros2-distro-mutex 0.8.* jazzy_*
-  - libgcc >=13
-  - libstdcxx >=13
-  - libgcc >=13
-  - numpy >=1.26.4,<2.0a0
-  - python_abi 3.12.* *_cp312
-  - ros2-distro-mutex >=0.8.0,<0.9.0a0
-  license: BSD-3-Clause
-  size: 122264
-  timestamp: 1744704772787
 - conda: https://conda.anaconda.org/robostack-jazzy/linux-64/ros-jazzy-eigen3-cmake-module-0.3.0-np126py312he556185_5.conda
   sha256: 15cd2279ae6c05712bf846be19a8321b4a905a0e26a59dc7866ba8692c229b35
   md5: 3ccaf5450f500b3c10da8944c55d26b3
