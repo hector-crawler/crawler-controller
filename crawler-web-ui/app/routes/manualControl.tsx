@@ -28,8 +28,8 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
 
       {/* motors */}
       <div className="flex gap-6">
-        <MotorController onMove={async (factor) => await api.moveArm(factor * 250)} minPosition={600} maxPosition={1200} position={manualState.armPosition} />
-        <MotorController onMove={async (factor) => await api.moveHand(factor * 250)} minPosition={1500} maxPosition={2100} position={manualState.handPosition} />
+        <MotorController onMove={async (factor) => await api.moveArm(factor * 100)} minPosition={900} maxPosition={1500} position={manualState.armPosition} />
+        <MotorController onMove={async (factor) => await api.moveHand(factor * 100)} minPosition={2500} maxPosition={3300} position={manualState.handPosition} />
       </div>
 
       {/* encoders */}
