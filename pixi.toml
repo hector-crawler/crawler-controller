@@ -33,14 +33,15 @@ dev-web = "cd crawler-web-ui && npm run dev"
 scripts = ["build-env.sh", "install/setup.sh"]
 
 [dependencies]
-python = ">=3.12.10,<3.13"
+python = ">=3.12.11,<3.13"
 flask = ">=3.1.1,<4"
 flask_cors = ">=4.0.0,<5"
 ros-jazzy-desktop = ">=0.11.0,<0.12"
 colcon-common-extensions = ">=0.3.0,<0.4"
-setuptools = ">=80.1.0,<81"
-nodejs = ">=22.13.0,<22.14"
-pytorch = ">=2.6.0,<3"
+setuptools = ">=80.9.0,<81"
+nodejs = ">=24.4.0,<24.5"
+keras = ">=3.10.0,<4"
+numpy = ">=1.26.4,<2"
 
 [pypi-dependencies]
 rpi-gpio = ">=0.7.1, <0.8"
