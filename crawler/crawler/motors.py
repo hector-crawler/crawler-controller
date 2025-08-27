@@ -29,6 +29,10 @@ Arm = MotorData("Arm", 1, 600, 1200)
 Hand = MotorData("Hand", 3, 1500, 2100)
 
 
+ARM_RANGE = Arm.max_limit - Arm.min_limit
+HAND_RANGE = Hand.max_limit - Hand.min_limit
+
+
 class MotorsNode(Node):
     def __init__(self):
         super().__init__("crawler_motors")
@@ -165,20 +169,19 @@ class MockMotorsNode(Node):
         self.arm_position = 1000
         self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/position", 5)
         self.create_subscription(
-            Int32,
-            "/crawler/arm/move",
-            lambda msg: self.move_arm(msg.data),# type: ignore
-            5,  
-        )
+             "/crawler/arm/move",
+            lambda msg: self.move_arm(msg.data),  # type: ignore
+            5,
+         )
 
         self.hand_position = 1000
         self.hand_publisher = self.create_publisher(Int32, "/crawler/hand/position", 5)
         self.create_subscription(
-            Int32,
-            "/crawler/hand/move",
-            lambda msg: self.move_hand(msg.data),# type: ignore
-            5,  
-        )
+             Int32,
+             "/crawler/hand/move",
+            lambda msg: self.move_hand(msg.data),  # type: ignore
+            5,
+         )
 
     def move_arm(self, step: int) -> None:
         self.arm_position = max(600, min(1200, self.arm_position + step))
