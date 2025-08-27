@@ -25,9 +25,9 @@ class MotorData:
     max_limit: int
 
 
-Arm = MotorData("Arm", 1, 600, 1200)
-Hand = MotorData("Hand", 3, 1500, 2100)
-
+Arm = MotorData("Arm", 6, 600, 1200)
+Hand = MotorData("Hand", 7, 1500, 2100)
+# todo: make the Dynamixel motor IDs a node parameter
 
 class MotorsNode(Node):
     def __init__(self):
