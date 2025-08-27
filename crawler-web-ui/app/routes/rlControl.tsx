@@ -97,7 +97,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
     armStates: 3,
     handStates: 3,
     armStep: 200,
-    handStep: 299,
+    handStep: 200,
     learningRate: 0.5,
     explorationRate: 1.0,
     explorationDecayFactor: 0.95,

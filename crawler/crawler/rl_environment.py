@@ -113,7 +113,7 @@ class RLEnvironmentNode(Node):
         msg.reward = float(reward)
         self.state_reward_publisher.publish(msg)
         self.get_logger().info(
-            f"Publising state: arm_position={msg.arm_position}, hand_position={msg.hand_position}, reward={msg.reward}"
+            f"Publishing state: arm_position={msg.arm_position}, hand_position={msg.hand_position}, reward={msg.reward}"
         )
         self.latest_state_reward = msg
         self.loop_state = 1

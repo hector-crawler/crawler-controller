@@ -66,6 +66,8 @@ class WebApiPublisher(Node):
         self,
         hand_states: int,
         arm_states: int,
+        hand_step: int,
+        arm_step: int,
         learning_rate: float,
         explor_rate: float,
         explor_decay_factor: float,
@@ -76,6 +78,8 @@ class WebApiPublisher(Node):
             QLearningParameters(
                 hand_states=hand_states,
                 arm_states=arm_states,
+                hand_step=hand_step,
+                arm_step=arm_step,
                 learning_rate=learning_rate,
                 explor_rate=explor_rate,
                 explor_decay_factor=explor_decay_factor,
@@ -268,6 +272,8 @@ def api_mock_right_encoder():
 def api_rl_start():
     arm_states = request.json.get("armStates")
     hand_states = request.json.get("handStates")
+    arm_step = request.json.get("armStep")
+    hand_step = request.json.get("handStep")
     learning_rate = float(request.json.get("learningRate"))
     explor_rate = float(request.json.get("explorationRate"))
     explor_decay_factor = float(request.json.get("explorationDecayFactor"))
@@ -276,6 +282,8 @@ def api_rl_start():
     publisher.start_rl_q_learning(
         arm_states,
         hand_states,
+        hand_step,
+        arm_step,
         learning_rate,
         explor_rate,
         explor_decay_factor,

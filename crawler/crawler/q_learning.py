@@ -10,7 +10,7 @@ from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
 
-from .motors import ARM_RANGE, HAND_RANGE
+from .motors import ARM_RANGE, HAND_RANGE, ARM_MIN_LIMIT, HAND_MIN_LIMIT
 from .move import MOVES_COUNT, Move
 
 
@@ -53,9 +53,6 @@ class QLearningNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        # At this point we might also think about adding another dimension for self.last_move
-        self.q_table = np.zeros([self.arm_states, self.hand_states, MOVES_COUNT])
-
     def start(self, parameters):
         if self.running:
             self.get_logger().info("Q-learning node is already running!")
@@ -87,25 +84,39 @@ Q-learning parameters:
 """
         )
 
+        # At this point we might also think about adding another dimension for self.last_move
+        self.q_table = np.ones([self.arm_states, self.hand_states, MOVES_COUNT])
+
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
 
     def receive_arm_pos(self, msg) -> None:
-        self.curr_arm_state = int(msg.data * self.arm_states / ARM_RANGE)
+        if not self.running:
+            return
+        self.curr_arm_state = int((msg.data - ARM_MIN_LIMIT) * self.arm_states / ARM_RANGE)
 
     def receive_hand_pos(self, msg) -> None:
-        self.curr_hand_state = int(msg.data * self.hand_states / HAND_RANGE)
+        if not self.running:
+            return
+        self.curr_hand_state = int((msg.data - HAND_MIN_LIMIT) * self.hand_states / HAND_RANGE)
 
     def send_move(self, m: Move) -> None:
+        act = Action()
         match m:
             case Move.ARM_UP:
-                self.action_publisher.publish(Action(self.arm_step, 0))
+                act.move_arm = self.arm_step
+                act.move_hand = 0
             case Move.ARM_DOWN:
-                self.action_publisher.publish(Action(-self.arm_step, 0))
+                act.move_arm = -self.arm_step
+                act.move_hand = 0
             case Move.HAND_UP:
-                self.action_publisher.publish(Action(0, self.hand_step))
+                act.move_arm = 0
+                act.move_hand = self.hand_step
             case Move.HAND_DOWN:
-                self.action_publisher.publish(Action(0, -self.hand_step))
+                act.move_arm = 0
+                act.move_hand = -self.hand_step
+
+        self.action_publisher.publish(act)
 
     def pick_move(self) -> Move:
         if rand.random() < self.explor_rate:

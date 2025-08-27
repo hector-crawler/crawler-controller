@@ -13,6 +13,7 @@ DEVICENAME = "/dev/ttyUSB0"
 TORQUE_MEM_ADDR = 64
 TORQUE_ENABLE = 1
 PROFILE_VELOCITY_MEM_ADDR = 112
+PROFILE_VELOCITY = 10000
 GOAL_POS_MEM_ADDR = 116
 PRESENT_POS_MEM_ADDR = 132
 
@@ -25,6 +26,8 @@ class MotorData:
     max_limit: int
 
 
+ARM_MIN_LIMIT = 900
+HAND_MIN_LIMIT = 2500
 Arm = MotorData("Arm", 6, 900, 1500)
 Hand = MotorData("Hand", 7, 2500, 3300)
 # todo: make the motor IDs and limits a node parameter
@@ -80,7 +83,7 @@ class MotorsNode(Node):
 
     def setup_motor(self, motor: MotorData) -> None:
         comm_result, error = self.packet_handler.write4ByteTxRx(
-            self.port_handler, motor.id, PROFILE_VELOCITY_MEM_ADDR, 10
+            self.port_handler, motor.id, PROFILE_VELOCITY_MEM_ADDR, PROFILE_VELOCITY
         )
         if comm_result != dxl.COMM_SUCCESS:
             self.get_logger().error(f"Failed to set profile velocity for {motor.name}")
