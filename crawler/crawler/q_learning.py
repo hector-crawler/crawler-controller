@@ -4,10 +4,11 @@ from enum import Enum
 
 import rclpy
 import torch
-from crawler_msgs.msg import (  # type: ignore
-    Action,
-    QLearningInternalState,
-    StateReward,
+from crawler_msgs.msg import (
+    Action, # type: ignore
+    QLearningParameters, # type: ignore
+    QLearningInternalState, # type: ignore
+    StateReward, # type: ignore
 )
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32 
@@ -29,49 +30,20 @@ class QLearningNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_q_learning")
 
-        # Parameters regarding the motors
-        self.declare_parameter("arm_states", 3)
-        self.arm_states = (
-            self.get_parameter("arm_states").get_parameter_value().integer_value
-        )
-        self.declare_parameter("hand_states", 3)
-        self.hand_states = (
-            self.get_parameter("hand_states").get_parameter_value().integer_value
-        )
-        self.declare_parameter("arm_step", 200)
-        self.arm_step = (
-            self.get_parameter("arm_step").get_parameter_value().integer_value
-        )
-        self.declare_parameter("hand_step", 200)
-        self.hand_step = (
-            self.get_parameter("hand_step").get_parameter_value().integer_value
-        )
+        self.arm_states = 0
+        self.hand_states = 0
+        self.arm_step = 0
+        self.hand_step = 0
+        self.learning_rate = 0.0
+        self.explor_rate = 0.0
+        self.explor_decay_rate = 0.0
+        self.max_explor_rate = 0.0
+        self.min_explor_rate = 0.0
+        self.discount_factor = 0.0
 
-        # Parameters regarding the Q-Learning
-        self.declare_parameter("learning_rate", 0.5)
-        self.learning_rate = (
-            self.get_parameter("learning_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("explor_rate", 1.0)
-        self.explor_rate = (
-            self.get_parameter("explor_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("explor_decay_rate", 0.05)
-        self.explor_decay_rate = (
-            self.get_parameter("explor_decay_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("max_explor_rate", 0.5)
-        self.max_explor_rate = (
-            self.get_parameter("max_explor_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("min_explor_rate", 0.01)
-        self.min_explor_rate = (
-            self.get_parameter("min_explor_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("discount_factor", 0.99)
-        self.discount_factor = (
-            self.get_parameter("discount_factor").get_parameter_value().double_value
-        )
+        # start subscriber
+        self.running = False
+        self.create_subscription(QLearningParameters, "/crawler/rl/q_learning/start", self.start, 5)
 
         queue_len = 5
         self.internal_state_publisher = self.create_publisher(
@@ -102,13 +74,32 @@ class QLearningNode(Node):
         self.last_arm_state = 0
         self.last_hand_state = 0
 
-        # We might also want to use torch.rand() for initialization.
+        """ # We might also want to use torch.rand() for initialization.
         self.q_table = torch.zeros(
             # At this point we might also think about adding another dimension for self.last_move
             [self.arm_states, self.hand_states, self.moves_count]
             # We might also want to investigate changing the dtype parameter for our usecase.
             # https://docs.pytorch.org/docs/stable/tensor_attributes.html#torch.dtype
-        )
+        ) """
+
+        self.q_table = torch.rand(self.arm_states, self.hand_states, 4)
+    
+    def start(self, parameters):
+        if self.running:
+            self.get_logger().info("Q-learning node is already running!")
+            return
+
+        # parameters
+        self.arm_states = parameters.arm_states
+        self.hand_states = parameters.hand_states
+        self.arm_step = parameters.arm_step
+        self.hand_step = parameters.hand_step
+        self.learning_rate = parameters.learning_rate
+        self.explor_rate = parameters.explor_rate
+        self.explor_decay_rate = parameters.explor_decay_rate
+        self.max_explor_rate = parameters.max_explor_rate
+        self.min_explor_rate = parameters.min_explor_rate
+        self.discount_factor = parameters.discount_factor
 
         self.get_logger().info(
             f"""
@@ -124,7 +115,8 @@ Q-learning parameters:
 """
         )
 
-        self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
+        self.running = True
+        self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
 
     def set_arm_pos(self, msg) -> None:
         self.curr_arm_state = int(msg.data * self.arm_states / ARM_MOTOR_RANGE)
@@ -154,7 +146,7 @@ Q-learning parameters:
         return move
 
     def get_reward(self, msg) -> None:
-        reward = msg.data
+        reward = msg.reward
         self.learn(reward)
         m = self.pick_move()
         self.last_move = m
@@ -179,13 +171,40 @@ Q-learning parameters:
         self.last_hand_state = self.curr_hand_state
 
     def publish_internal_state(self) -> None:
+        if not self.running:
+            return
+
         msg = QLearningInternalState()
-        msg.param_a = self.arm_states
-        msg.param_b = self.hand_states
-        msg.timestamp = datetime.datetime.now().isoformat()
+        msg.arm_states = self.arm_states
+        msg.hand_states = self.hand_states
+        msg.arm_step = self.arm_step
+        msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
+        msg.explor_rate = self.explor_rate
+        msg.explor_decay_rate = self.explor_decay_rate
+        msg.max_explor_rate = self.max_explor_rate
+        msg.min_explor_rate = self.min_explor_rate
+        msg.discount_factor = self.discount_factor
+
+        msg.q_table_rows = []
+        for i_arm in range(self.arm_states):
+            for i_hand in range(self.hand_states):
+                msg.q_table_rows.append(f"{i_arm}x{i_hand}")
+
+        msg.q_table_cols = []
+        for i_action in range(4):
+            msg.q_table_cols.append(f"action {i_action}")
+        
+        msg.q_table_values = self.q_table.flatten().tolist()
+        
+        # msg.timestamp = datetime.datetime.now().isoformat() # todo: reintroduce this?
         self.internal_state_publisher.publish(msg)
 
     def stop(self, _) -> None:
+        if not self.running:
+            self.get_logger().info("Q-learning node is not running!")
+            return
+
         self.get_logger().info("Shutting down Q-learning node")
         self.destroy_node()
 
