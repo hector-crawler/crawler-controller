@@ -116,7 +116,7 @@ class MotorsNode(Node):
         self.get_logger().info(f"Hand position: {position}")
         self.hand_publisher.publish(Int32(data=position))
 
-    def handle_errors(self, m: MotorData, comm_res: int, err: int, msg: str) -> None:
+    def handle_error(self, m: MotorData, comm_res: int, err: int, msg: str) -> None:
         if comm_res != dxl.COMM_SUCCESS:
             self.get_logger().error(f"COMMUNICATION FAIL: {msg} for motor {m.name}")
         elif err != 0:
