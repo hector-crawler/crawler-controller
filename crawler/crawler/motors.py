@@ -92,8 +92,6 @@ class MotorsNode(Node):
         self.moving_status_publisher = self.create_publisher(
             Bool, "/crawler/motors/moving", queue_len
         )
-        interval_seconds = 0.1
-        self.create_timer(interval_seconds, self.update_moving_status, autostart=True)
 
         interval_seconds = 0.5
         self.create_timer(interval_seconds, self.update_motor_positions, autostart=True)
@@ -169,11 +167,6 @@ class MotorsNode(Node):
         )
         self.handle_error(motor, comm_result, error, "Reading Movement")
         return is_moving == 1
-
-    def update_moving_status(self):
-        hand_moving = self.is_moving(self.hand)
-        arm_moving = self.is_moving(self.arm)
-        self.moving_status_publisher.publish(Bool(data=hand_moving or arm_moving))
 
 
 class MockMotorsNode(Node):

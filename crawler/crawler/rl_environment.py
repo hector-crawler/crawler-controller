@@ -1,9 +1,10 @@
+import time
 from typing import List
 
 import rclpy
 from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward  # type: ignore
 from rclpy.node import Node
-from std_msgs.msg import Bool, Empty, Int32  # type: ignore
+from std_msgs.msg import Empty, Int32  # type: ignore
 
 
 class RLEnvironmentNode(Node):
@@ -64,11 +65,6 @@ class RLEnvironmentNode(Node):
             queue_len,
         )
 
-        self.motors_are_moving = False
-        self.create_subscription(
-            Bool, "/crawler/motors/moving", self.update_moving_status, queue_len
-        )
-
         self.last_left_encoder_position = 0
         self.last_right_encoder_position = 0
         self.initial_encoder_positions = 0
@@ -121,7 +117,7 @@ class RLEnvironmentNode(Node):
 
         self.standstill_since = self.standstill_since + 1 if reward == 0 else 0
         if self.standstill_since > 3:
-            reward -= 1.1**self.standstill_since
+            reward -= 2**self.standstill_since
 
         # calculate reward by adding difference in encoder positions
         self.last_left_encoder_position = self.left_encoder_position
@@ -159,9 +155,8 @@ class RLEnvironmentNode(Node):
         # set motors to starting position
         self.arm_publisher.publish(Int32(data=self.arm_start_position))
         self.hand_publisher.publish(Int32(data=self.hand_start_position))
-        self.wait_for_motors_stop()
 
-        # send first state
+        time.sleep(0.5)  # TODO: Wait gracefully for motors to stop
         self.publish_state_reward()
 
     def execute_action(self, msg: Action) -> None:
@@ -182,9 +177,8 @@ class RLEnvironmentNode(Node):
         )
         self.loop_state = 2
         self.publish_internals()
-        self.wait_for_motors_stop()
 
-        # send next state
+        time.sleep(0.3)  # TODO: Wait gracefully for motors to stop
         self.publish_state_reward()
 
     def publish_internals(self) -> None:
@@ -205,13 +199,6 @@ class RLEnvironmentNode(Node):
         self.latest_action = Action(move_arm=0, move_hand=0)
         self.initial_encoder_positions = 0
         self.progress: List[int] = []
-
-    def wait_for_motors_stop(self):
-        while self.motors_are_moving:
-            pass
-
-    def update_moving_status(self, msg):
-        self.motors_are_moving = msg.data
 
 
 def main(args=None):

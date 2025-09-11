@@ -51,7 +51,7 @@ class QLearningNode(Node):
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
         self.move_is_exploration = False
-        self.create_timer(1.0, self.publish_internal_state)
+        self.create_timer(0.2, self.publish_internal_state)
 
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, queue_len)
         self.create_subscription(
