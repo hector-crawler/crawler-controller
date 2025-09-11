@@ -90,7 +90,7 @@ function TopNavigation() {
       <ul className="flex gap-2">
         <li>
           <Link to="/" className="px-3 py-1.5 pr-5 font-bold flex items-center gap-4">
-            <img src="/favicon.ico" />
+            <img src="/favicon.ico" className="size-8" />
             Crawler
           </Link>
         </li>
