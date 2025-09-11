@@ -207,7 +207,17 @@ Q-learning parameters:
 
         msg.q_table_cols = []
         for i_action in range(MOVES_COUNT):
-            msg.q_table_cols.append(f"action {i_action}")
+            match Move(i_action):
+                case Move.ARM_UP:
+                    msg.q_table_cols.append("arm up")
+                case Move.ARM_DOWN:
+                    msg.q_table_cols.append("arm down")
+                case Move.HAND_UP:
+                    msg.q_table_cols.append("hand up")
+                case Move.HAND_DOWN:
+                    msg.q_table_cols.append("hand down")
+                case _:
+                    msg.q_table_cols.append("(unknown)")
 
         msg.q_table_values = self.q_table.flatten().tolist()
 
