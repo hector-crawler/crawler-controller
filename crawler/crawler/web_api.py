@@ -7,16 +7,16 @@ from threading import Thread
 
 import rclpy
 import rclpy.logging
-from crawler_msgs.msg import (  # type: ignore
-    QLearningInternalState,
-    QLearningParameters,
-    RLEnvironmentInternals,
+from crawler_msgs.msg import ( 
+    QLearningInternalState, # type: ignore
+    QLearningParameters, # type: ignore
+    RLEnvironmentInternals, # type: ignore
 )
 from flask import Flask, request, send_file
 from flask_cors import CORS
 from flask_sock import Sock  # type: ignore
 from rclpy.node import Node
-from std_msgs.msg import Bool, Empty, Int32  # type: ignore
+from std_msgs.msg import Bool, Empty, Int32, String  # type: ignore
 
 # ROS nodes
 
@@ -41,6 +41,9 @@ class WebApiPublisher(Node):
         )
         self.q_learning_start_publisher = self.create_publisher(
             QLearningParameters, "/crawler/rl/q_learning/start", 5
+        )
+        self.q_learning_set_move_mode_publisher = self.create_publisher(
+            String, "/crawler/rl/q_learning/set_move_mode", 5
         )
         self.rl_stop_publisher = self.create_publisher(Empty, "/crawler/rl/stop", 5)
 
@@ -73,6 +76,7 @@ class WebApiPublisher(Node):
         explor_decay_factor: float,
         min_explor_rate: float,
         discount_factor: float,
+        initial_move_mode_wait: bool,
     ):
         self.q_learning_start_publisher.publish(
             QLearningParameters(
@@ -85,8 +89,12 @@ class WebApiPublisher(Node):
                 explor_decay_factor=explor_decay_factor,
                 min_explor_rate=min_explor_rate,
                 discount_factor=discount_factor,
+                initial_move_mode_wait=initial_move_mode_wait,
             )
         )
+    
+    def rl_q_learning_set_move_mode(self, move_mode: str):
+        self.q_learning_set_move_mode_publisher.publish(String(data=move_mode))
 
     def stop_rl(self):
         self.rl_stop_publisher.publish(Empty())
@@ -168,6 +176,8 @@ class WebApiSubscriber(Node):
                     "qTableCols": msg.q_table_cols,
                     "qTableValues": msg.q_table_values.tolist(),
                     "moveIsExploration": msg.move_is_exploration,
+                    "moveMode": msg.move_mode,
+                    "waitingForUserMove": msg.waiting_for_user_move,
                 }
             }
         )
@@ -280,6 +290,7 @@ def api_rl_start():
     explor_decay_factor = float(request.json.get("explorationDecayFactor"))
     min_explor_rate = float(request.json.get("minExplorationRate"))
     discount_factor = float(request.json.get("discountFactor"))
+    initial_move_mode_wait = bool(request.json.get("initialMoveModeWait"))
     publisher.start_rl_q_learning(
         arm_states,
         hand_states,
@@ -290,7 +301,15 @@ def api_rl_start():
         explor_decay_factor,
         min_explor_rate,
         discount_factor,
+        initial_move_mode_wait,
     )
+    return "ok"
+
+
+@app.route("/api/rl/qLearning/setMoveMode", methods=["POST"])
+def api_rl_qlearning_set_move_mode():
+    move_mode = request.json.get("moveMode")
+    publisher.rl_q_learning_set_move_mode(move_mode)
     return "ok"
 
 

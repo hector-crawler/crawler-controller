@@ -9,6 +9,8 @@ export type ManualState = {
     rightEncoderPosition: number,
 }
 
+export type MoveMode = "USER_WAIT" | "USER_ARM_UP" | "USER_ARM_DOWN" | "USER_HAND_UP" | "USER_HAND_DOWN" | "USER_STEP" | "USER_STEP_EXPLORATION" | "USER_STEP_EXPLOITATION" | "AUTOMATIC"
+
 export type RLInternals = {
     rlEnvironmentInternals: null | {
         loopState: 0 | 1 | 2,
@@ -37,6 +39,8 @@ export type RLInternals = {
         qTableRows: string[],
         qTableValues: number[],
         moveIsExploration: boolean,
+        moveMode: MoveMode,
+        waitingForUserMove: boolean,
     }
 }
 
@@ -50,6 +54,7 @@ export type QLearningConfiguration = {
     explorationDecayFactor: number,
     minExplorationRate: number,
     discountFactor: number,
+    initialMoveModeWait: boolean,
 }
 
 export class API {
@@ -127,6 +132,10 @@ export class API {
 
     startRLQLearning(configuration: QLearningConfiguration) {
         return this.post("/api/rl/start/qLearning", configuration);
+    }
+
+    setQLearningMoveMode(moveMode: MoveMode) {
+        return this.post("/api/rl/qLearning/setMoveMode", { moveMode });
     }
 
     stopRL() {
