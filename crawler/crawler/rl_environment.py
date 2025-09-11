@@ -1,10 +1,9 @@
-import time
 from typing import List
 
 import rclpy
 from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward  # type: ignore
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32  # type: ignore
+from std_msgs.msg import Bool, Empty, Int32  # type: ignore
 
 
 class RLEnvironmentNode(Node):
@@ -23,15 +22,16 @@ class RLEnvironmentNode(Node):
             .integer_value
         )
 
+        queue_len = 5
         # handle /crawler/rl/state_reward, /crawler/rl/action
         self.state_reward_publisher = self.create_publisher(
-            StateReward, "/crawler/rl/state_reward", 5
+            StateReward, "/crawler/rl/state_reward", queue_len
         )
         self.create_subscription(
             Action,
             "/crawler/rl/action",
             lambda msg: self.execute_action(msg),
-            5,
+            queue_len,
         )
 
         # observe environment (arm, hand, encoders)
@@ -40,28 +40,33 @@ class RLEnvironmentNode(Node):
             Int32,
             "/crawler/arm/position",
             lambda msg: self.update_arm_position(msg.data),  # type: ignore
-            5,
+            queue_len,
         )
         self.hand_position = 0
         self.create_subscription(
             Int32,
             "/crawler/hand/position",
             lambda msg: self.update_hand_position(msg.data),  # type: ignore
-            5,
+            queue_len,
         )
         self.left_encoder_position = 0
         self.create_subscription(
             Int32,
             "/crawler/left_encoder/position",
             lambda msg: self.update_left_encoder_position(msg.data),  # type: ignore
-            5,
+            queue_len,
         )
         self.right_encoder_position = 0
         self.create_subscription(
             Int32,
             "/crawler/right_encoder/position",
             lambda msg: self.update_right_encoder_position(msg.data),  # type: ignore
-            5,
+            queue_len,
+        )
+
+        self.motors_are_moving = False
+        self.create_subscription(
+            Bool, "/crawler/motors/moving", self.update_moving_status, queue_len
         )
 
         self.last_left_encoder_position = 0
@@ -71,19 +76,23 @@ class RLEnvironmentNode(Node):
         self.standstill_since = 0
 
         # handle actions (move arm, hand)
-        self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
-        self.hand_publisher = self.create_publisher(Int32, "/crawler/hand/move", 5)
+        self.arm_publisher = self.create_publisher(
+            Int32, "/crawler/arm/move", queue_len
+        )
+        self.hand_publisher = self.create_publisher(
+            Int32, "/crawler/hand/move", queue_len
+        )
 
         # handle /crawler/rl/start, /crawler/rl/stop
-        self.create_subscription(Empty, "/crawler/rl/start", self.start_rl, 5)
-        self.create_subscription(Empty, "/crawler/rl/stop", self.stop_rl, 5)
+        self.create_subscription(Empty, "/crawler/rl/start", self.start_rl, queue_len)
+        self.create_subscription(Empty, "/crawler/rl/stop", self.stop_rl, queue_len)
 
         # handle /crawler/rl/internals
         self.latest_state_reward = StateReward(
             arm_position=0, hand_position=0, reward=0.0
         )
         self.internals_publisher = self.create_publisher(
-            RLEnvironmentInternals, "/crawler/rl/internals", 5
+            RLEnvironmentInternals, "/crawler/rl/internals", queue_len
         )
         self.reset()
 
@@ -154,7 +163,7 @@ class RLEnvironmentNode(Node):
         # set motors to starting position
         self.arm_publisher.publish(Int32(data=self.arm_start_position))
         self.hand_publisher.publish(Int32(data=self.hand_start_position))
-        time.sleep(0.5)  # todo: wait for motors to reach position
+        self.wait_for_motors_stop()
 
         # send first state
         self.publish_state_reward()
@@ -177,7 +186,7 @@ class RLEnvironmentNode(Node):
         )
         self.loop_state = 2
         self.publish_internals()
-        time.sleep(1)  # todo: wait for action to finish
+        self.wait_for_motors_stop()
 
         # send next state
         self.publish_state_reward()
@@ -200,6 +209,13 @@ class RLEnvironmentNode(Node):
         self.latest_action = Action(move_arm=0, move_hand=0)
         self.initial_encoder_positions = 0
         self.progress: List[int] = []
+
+    def wait_for_motors_stop(self):
+        while self.motors_are_moving:
+            pass
+
+    def update_moving_status(self, msg):
+        self.motors_are_moving = msg.data
 
 
 def main(args=None):
