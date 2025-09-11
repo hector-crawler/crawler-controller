@@ -54,6 +54,7 @@ export type QLearningConfiguration = {
 
 export class API {
     private apiHost = import.meta.env.VITE_API_ROOT || window.location.host
+    private apiOrigin = import.meta.env.VITE_API_ROOT !== undefined ? `http://${this.apiHost}` : window.location.origin
     public readonly isDev = import.meta.env.VITE_API_ROOT?.includes("localhost")
 
     // HTTP request utilities
@@ -69,7 +70,7 @@ export class API {
     private request(path: string, method: string, body: any | null) {
         return new Promise<string>((resolve, reject) => {
             if (!path.startsWith("/")) path = "/" + path;
-            fetch(`http://${this.apiHost}${path}`, {
+            fetch(`${this.apiOrigin}${path}`, {
                 method,
                 body: body !== null ? JSON.stringify(body) : null,
                 headers: { "Content-Type": "application/json" },
@@ -82,7 +83,8 @@ export class API {
     private ws<T>(path: string, defaultValue: T) {
         if (!path.startsWith("/")) path = "/" + path;
         const [state, setState] = useState<T>(defaultValue);
-        const { lastMessage } = useWebSocket(`ws://${this.apiHost}${path}`)
+        const wsProtocol = this.apiOrigin.startsWith("https") ? "wss" : "ws";
+        const { lastMessage } = useWebSocket(`${wsProtocol}://${this.apiHost}${path}`)
         useEffect(() => {
             if (lastMessage !== null) setState(JSON.parse(lastMessage.data));
         }, [lastMessage]);
