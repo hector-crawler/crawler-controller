@@ -4,5 +4,5 @@
 # it can only be installed and used on the Pi, because it depends on the `lgpio` library
 sed -i 's/## rpi-only ## //g' pixi.toml
 
-pixi run build-ros
-pixi run launch
+pixi run -e raspi build-ros
+pixi run -e raspi launch

@@ -59,6 +59,7 @@ types-flask = ">=1.1.6,<2"
 jedi-language-server = ">=0.45.1,<0.46"
 ruff = ">=0.13.0,<0.14"
 typescript-language-server = ">=4.3.4,<5"
+rsync = ">=3.4.1,<4"
 
 [feature.dev.pypi-dependencies]
 types-flask-cors = ">=5.0.0.20250413, <6"
