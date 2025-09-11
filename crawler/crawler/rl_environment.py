@@ -10,6 +10,16 @@ class RLEnvironmentNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_rl_environment")
 
+        # parameters: motor start positions
+        self.declare_parameter("arm_start_position", 1200)
+        self.arm_start_position = (
+            self.get_parameter("arm_start_position").get_parameter_value().integer_value
+        )
+        self.declare_parameter("hand_start_position", 3000)
+        self.hand_start_position = (
+            self.get_parameter("hand_start_position").get_parameter_value().integer_value
+        )
+
         # handle /crawler/rl/state_reward, /crawler/rl/action
         self.state_reward_publisher = self.create_publisher(
             StateReward, "/crawler/rl/state_reward", 5
@@ -131,6 +141,11 @@ class RLEnvironmentNode(Node):
         self.initial_encoder_positions = (
             self.left_encoder_position + self.right_encoder_position
         )
+
+        # set motors to starting position
+        self.arm_publisher.publish(Int32(data=self.arm_start_position))
+        self.hand_publisher.publish(Int32(data=self.hand_start_position))
+        time.sleep(0.5)  # todo: wait for motors to reach position
 
         # send first state
         self.publish_state_reward()
