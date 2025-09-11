@@ -36,6 +36,7 @@ export type RLInternals = {
         qTableCols: string[],
         qTableRows: string[],
         qTableValues: number[],
+        moveIsExploration: boolean,
     }
 }
 

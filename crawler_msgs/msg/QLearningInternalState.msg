@@ -11,3 +11,5 @@ float64 discount_factor
 string[] q_table_cols
 string[] q_table_rows
 float64[] q_table_values
+
+bool move_is_exploration

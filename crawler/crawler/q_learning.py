@@ -38,6 +38,7 @@ class QLearningNode(Node):
         self.internals_publisher = self.create_publisher(
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
+        self.move_is_exploration = False
         self.create_timer(1.0, self.publish_internal_state)
 
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, queue_len)
@@ -131,12 +132,14 @@ Q-learning parameters:
         if rand.random() < self.explor_rate:
             something_new = rand.choice(np.array(Move))
             self.get_logger().info(f"Randomly selected move {something_new}")
+            self.move_is_exploration = True
             return something_new
 
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
         move_idx = np.argmax(pool).item()
         move = Move(move_idx)
         self.get_logger().info(f"Selected move {move}")
+        self.move_is_exploration = False
         return move
 
     def get_reward(self, msg: StateReward) -> None:
@@ -186,6 +189,8 @@ Q-learning parameters:
             msg.q_table_cols.append(f"action {i_action}")
 
         msg.q_table_values = self.q_table.flatten().tolist()
+
+        msg.move_is_exploration = self.move_is_exploration
 
         self.internals_publisher.publish(msg)
 

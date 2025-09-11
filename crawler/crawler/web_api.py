@@ -167,6 +167,7 @@ class WebApiSubscriber(Node):
                     "qTableRows": msg.q_table_rows,
                     "qTableCols": msg.q_table_cols,
                     "qTableValues": msg.q_table_values.tolist(),
+                    "moveIsExploration": msg.move_is_exploration,
                 }
             }
         )

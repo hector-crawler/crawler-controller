@@ -158,16 +158,22 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
             />
 
             {/* display parameters */}
-            <LabeledValues label="Parameters" table={{
-              "arm states": rlInternals.qLearning.armStates.toString(),
-              "hand states": rlInternals.qLearning.handStates.toString(),
-              "arm step": rlInternals.qLearning.armStep.toString(),
-              "hand step": rlInternals.qLearning.handStep.toString(),
-              "learning rate": rlInternals.qLearning.learningRate.toString(),
-              "exploration rate": rlInternals.qLearning.explorationRate.toFixed(6),
-              "exploration decay factor": rlInternals.qLearning.explorationDecayFactor.toString(),
-              "discount factor": rlInternals.qLearning.discountFactor.toString(),
-            }} />
+            <div className="flex flex-col gap-3">
+              <LabeledValues label="Parameters" table={{
+                "arm states": rlInternals.qLearning.armStates.toString(),
+                "hand states": rlInternals.qLearning.handStates.toString(),
+                "arm step": rlInternals.qLearning.armStep.toString(),
+                "hand step": rlInternals.qLearning.handStep.toString(),
+                "learning rate": rlInternals.qLearning.learningRate.toString(),
+                "exploration rate": rlInternals.qLearning.explorationRate.toFixed(6),
+                "exploration decay factor": rlInternals.qLearning.explorationDecayFactor.toString(),
+                "discount factor": rlInternals.qLearning.discountFactor.toString(),
+              }} />
+              {(rlInternals.qLearning.moveIsExploration
+                ? <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-full">?</div> Exploration</div>
+                : <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-sm">&gt;</div> Exploitation</div>
+              )}
+            </div>
           </div>
 
           <div className="width-full flex justify-end">
