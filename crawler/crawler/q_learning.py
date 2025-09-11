@@ -198,9 +198,8 @@ Q-learning parameters:
         if not self.running:
             self.get_logger().info("Q-learning node is not running!")
             return
-
-        self.get_logger().info("Shutting down Q-learning node")
-        self.destroy_node()
+        self.running = False
+        self.get_logger().info("Stopping Q-learning node")
 
 
 def main(args=None):
