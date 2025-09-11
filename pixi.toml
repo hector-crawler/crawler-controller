@@ -67,3 +67,4 @@ ty = ">=0.0.1a20, <0.0.1a21"
 
 [environments]
 default = ["dev"]
+raspi = []
