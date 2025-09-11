@@ -16,7 +16,7 @@ build-web = "scripts/build-and-install-web.sh"
 build-ros = "scripts/build-ros.sh"
 
 # start on the Pi
-start-rpi = "scripts/start-rpi.sh"
+start-rpi = { depends-on = ["build-ros", "launch"] }
 
 # launch ROS nodes directly
 launch = "ros2 launch crawler.launch" # all
