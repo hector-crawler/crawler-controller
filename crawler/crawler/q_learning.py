@@ -1,16 +1,15 @@
 import numpy as np
 import rclpy
-from crawler_msgs.msg import (  # type: ignore
-    Action,
-    QLearningInternalState,
-    QLearningParameters,
-    StateReward,
+from crawler_msgs.msg import (
+    Action, # type: ignore
+    QLearningInternalState, # type: ignore
+    QLearningParameters, # type: ignore
+    StateReward, # type: ignore
 )
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
 
-from .motors import ARM_RANGE, HAND_RANGE, ARM_MIN_LIMIT, HAND_MIN_LIMIT
 from .move import MOVES_COUNT, Move
 
 
@@ -19,6 +18,16 @@ class QLearningNode(Node):
         super().__init__("crawler_q_learning")
 
         queue_len = 5
+
+        # parameters for arm/hand limits
+        self.declare_parameter("arm_min_limit", 900)
+        self.arm_min_limit = self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        self.declare_parameter("arm_max_limit", 1500)
+        self.arm_max_limit = self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        self.declare_parameter("hand_min_limit", 2500)
+        self.hand_min_limit = self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        self.declare_parameter("hand_max_limit", 3300)
+        self.hand_max_limit = self.get_parameter("hand_max_limit").get_parameter_value().integer_value
 
         # start subscriber
         self.running = False
@@ -93,12 +102,12 @@ Q-learning parameters:
     def receive_arm_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_arm_state = int((msg.data - ARM_MIN_LIMIT) * self.arm_states / ARM_RANGE)
+        self.curr_arm_state = int((msg.data - self.arm_min_limit) / (self.arm_max_limit - self.arm_min_limit) * self.arm_states)
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_hand_state = int((msg.data - HAND_MIN_LIMIT) * self.hand_states / HAND_RANGE)
+        self.curr_hand_state = int((msg.data - self.hand_min_limit) / (self.hand_max_limit - self.hand_min_limit) * self.hand_states)
 
     def send_move(self, m: Move) -> None:
         act = Action()

@@ -26,18 +26,27 @@ class MotorData:
     max_limit: int
 
 
-ARM_MIN_LIMIT = 900
-HAND_MIN_LIMIT = 2500
-Arm = MotorData("Arm", 6, 900, 1500)
-Hand = MotorData("Hand", 7, 2500, 3300)
-# todo: make the motor IDs and limits a node parameter
-
-ARM_RANGE = Arm.max_limit - Arm.min_limit
-HAND_RANGE = Hand.max_limit - Hand.min_limit
-
 class MotorsNode(Node):
     def __init__(self):
         super().__init__("crawler_motors")
+
+        # arm parameters
+        self.declare_parameter("arm_id", 6)
+        arm_id = self.get_parameter("arm_id").get_parameter_value().integer_value
+        self.declare_parameter("arm_min_limit", 900)
+        arm_min_limit = self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        self.declare_parameter("arm_max_limit", 1500)
+        arm_max_limit = self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        self.arm = MotorData("Arm", arm_id, arm_min_limit, arm_max_limit)
+
+        # hand parameters
+        self.declare_parameter("hand_id", 7)
+        hand_id = self.get_parameter("hand_id").get_parameter_value().integer_value
+        self.declare_parameter("hand_min_limit", 2500)
+        hand_min_limit = self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        self.declare_parameter("hand_max_limit", 3300)
+        hand_max_limit = self.get_parameter("hand_max_limit").get_parameter_value().integer_value
+        self.hand = MotorData("Hand", hand_id, hand_min_limit, hand_max_limit)
 
         queue_len = 5
         self.create_subscription(Int32, "/crawler/arm/move", self.move_arm, queue_len)
@@ -58,19 +67,19 @@ class MotorsNode(Node):
         if self.port_handler.setBaudRate(BAUDRATE) == -1:
             raise Exception("Failed to set baudrate")
 
-        for motor in [Arm, Hand]:
+        for motor in [self.arm, self.hand]:
             self.setup_motor(motor)
 
         self.create_timer(0.5, self.update_motor_positions, autostart=True)
 
     def move_arm(self, msg):
         step = msg.data
-        self.move_motor(Arm, step)
+        self.move_motor(self.arm, step)
         self.get_logger().info(f"Moved arm by {step}")
 
     def move_hand(self, msg):
         step = msg.data
-        self.move_motor(Hand, step)
+        self.move_motor(self.hand, step)
         self.get_logger().info(f"Moved hand by {step}")
 
     def publish_arm_position(self, position: int) -> None:
@@ -107,8 +116,8 @@ class MotorsNode(Node):
             )
 
     def update_motor_positions(self) -> None:
-        self.arm_position = self.read_motor_position(Arm)
-        self.hand_position = self.read_motor_position(Hand)
+        self.arm_position = self.read_motor_position(self.arm)
+        self.hand_position = self.read_motor_position(self.hand)
         self.publish_arm_position(self.arm_position)
         self.publish_hand_position(self.hand_position)
         self.get_logger().info(

@@ -6,7 +6,14 @@
         <param name="led_pin" value="5" />
     </node>
 
-    <node pkg="crawler" exec="crawler_motors"></node>
+    <node pkg="crawler" exec="crawler_motors">
+        <param name="arm_id" value="6" />
+        <param name="arm_min_limit" value="900" />
+        <param name="arm_max_limit" value="1500" />
+        <param name="hand_id" value="7" />
+        <param name="hand_min_limit" value="2500" />
+        <param name="hand_max_limit" value="3300" />
+    </node>
 
     <node pkg="crawler" exec="crawler_encoders">
         <param name="left_encoder_pin_a" value="20" />
@@ -19,6 +26,11 @@
 
     <node pkg="crawler" exec="crawler_rl_environment"></node>
 
-    <node pkg="crawler" exec="crawler_q_learning"></node>
+    <node pkg="crawler" exec="crawler_q_learning">
+        <param name="arm_min_limit" value="900" />
+        <param name="arm_max_limit" value="1500" />
+        <param name="hand_min_limit" value="2500" />
+        <param name="hand_max_limit" value="3300" />
+    </node>
  
 </launch>
