@@ -1,7 +1,8 @@
 import time
 from typing import List
+
 import rclpy
-from crawler_msgs.msg import Action, StateReward, RLEnvironmentInternals  # type: ignore
+from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward  # type: ignore
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
 
@@ -17,7 +18,9 @@ class RLEnvironmentNode(Node):
         )
         self.declare_parameter("hand_start_position", 3000)
         self.hand_start_position = (
-            self.get_parameter("hand_start_position").get_parameter_value().integer_value
+            self.get_parameter("hand_start_position")
+            .get_parameter_value()
+            .integer_value
         )
 
         # handle /crawler/rl/state_reward, /crawler/rl/action
@@ -65,6 +68,7 @@ class RLEnvironmentNode(Node):
         self.last_right_encoder_position = 0
         self.initial_encoder_positions = 0
         self.highest_progress_so_far = 1
+        self.standstill_since = 0
 
         # handle actions (move arm, hand)
         self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
@@ -107,7 +111,12 @@ class RLEnvironmentNode(Node):
         right_progress = self.right_encoder_position - self.last_right_encoder_position
         total_progress = left_progress + right_progress
         self.highest_progress_so_far = max(self.highest_progress_so_far, total_progress)
+
         reward = total_progress / self.highest_progress_so_far
+
+        self.standstill_since = self.standstill_since + 1 if total_progress == 0 else 0
+        if self.standstill_since > 3:
+            reward = max(-1, reward - 0.1 * 1.1**self.standstill_since)
 
         # calculate reward by adding difference in encoder positions
         self.last_left_encoder_position = self.left_encoder_position
