@@ -13,7 +13,7 @@ from std_msgs.msg import Empty, Int32  # type: ignore
 from .move import MOVES_COUNT, Move
 
 
-def scaled_sigmoid(x: int) -> int:
+def scaled_sigmoid(x: float) -> float:
     return 1 / (1 + np.exp(-x * 10))
 
 
