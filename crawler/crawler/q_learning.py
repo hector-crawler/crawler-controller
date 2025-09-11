@@ -13,8 +13,8 @@ from std_msgs.msg import Empty, Int32  # type: ignore
 from .move import MOVES_COUNT, Move
 
 
-def scaled_sigmoid(x: float) -> float:
-    return 1 / (1 + np.exp(-x * 10))
+def sigmoid(x: float) -> float:
+    return 1 / (1 + np.exp(-x))
 
 
 class QLearningNode(Node):
@@ -107,7 +107,7 @@ Q-learning parameters:
         )
 
         # At this point we might also think about adding another dimension for self.last_move
-        self.q_table = np.ones([self.arm_states, self.hand_states, MOVES_COUNT])
+        self.q_table = np.zeros([self.arm_states, self.hand_states, MOVES_COUNT])
 
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
@@ -169,7 +169,7 @@ Q-learning parameters:
 
     def learn(self, rw: StateReward) -> None:
         idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
-        reward = scaled_sigmoid(rw.reward)
+        reward = sigmoid(rw.reward)
         predicted_value = self.q_table[idx]
         target_value = (
             self.q_table[self.curr_arm_state, self.curr_hand_state].max()
