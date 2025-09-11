@@ -48,7 +48,7 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
         <div className="width-full flex flex-col gap-4">
           <div className="flex items-center gap-2">
             Reward:
-            <div className={classNames("px-2 py-1 rounded-lg font-mono font-bold", {"bg-gray-600": internals.latestStateReward.reward === 0, "bg-green-700": internals.latestStateReward.reward > 0, "bg-red-700": internals.latestStateReward.reward < 0})}>
+            <div className={classNames("px-2 py-1 rounded-lg font-mono font-bold", { "bg-gray-600": internals.latestStateReward.reward === 0, "bg-green-700": internals.latestStateReward.reward > 0, "bg-red-700": internals.latestStateReward.reward < 0 })}>
               {internals.latestStateReward.reward > 0 ? `+${internals.latestStateReward.reward}` : internals.latestStateReward.reward}
             </div>
           </div>
@@ -86,7 +86,7 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
               <label htmlFor="show-only-latest" className="text-sm text-gray-400">{onlyLatestProgress ? "show all" : "show only latest"}</label>
             </div>
           </div>
-        </div>  
+        </div>
       )}
     </div>
   );
@@ -148,7 +148,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
         <div className="flex gap-5 flex-col">
           <div className="flex gap-5">
             {/* display Q-table */}
-            <HeatmapTable 
+            <HeatmapTable
               columnLabels={rlInternals.qLearning.qTableCols}
               rowLabels={rlInternals.qLearning.qTableRows}
               values={rlInternals.qLearning.qTableValues}
@@ -156,14 +156,14 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
 
             {/* display parameters */}
             <LabeledValues label="Parameters" table={{
-              "arm states": rlInternals.qLearning.armStates,
-              "hand states": rlInternals.qLearning.handStates,
-              "arm step": rlInternals.qLearning.armStep,
-              "hand step": rlInternals.qLearning.handStep,
-              "learning rate": rlInternals.qLearning.learningRate,
-              "exploration rate": rlInternals.qLearning.explorationRate,
-              "exploration decay factor": rlInternals.qLearning.explorationDecayFactor,
-              "discount factor": rlInternals.qLearning.discountFactor,
+              "arm states": rlInternals.qLearning.armStates.toString(),
+              "hand states": rlInternals.qLearning.handStates.toString(),
+              "arm step": rlInternals.qLearning.armStep.toString(),
+              "hand step": rlInternals.qLearning.handStep.toString(),
+              "learning rate": rlInternals.qLearning.learningRate.toString(),
+              "exploration rate": rlInternals.qLearning.explorationRate.toFixed(6),
+              "exploration decay factor": rlInternals.qLearning.explorationDecayFactor.toString(),
+              "discount factor": rlInternals.qLearning.discountFactor.toString(),
             }} />
           </div>
 
@@ -187,8 +187,8 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
       }, [value])
     }
     return <div key={key}
-      className={classNames("flex justify-center items-center m-0 px-1.5 py-0.5 rounded-md transition-[background-color,outline-color] outline-2 outline-transparent", {"font-mono border-1 border-blue-800": isQValue}, {"outline-white!": highlighted})}
-      style={{backgroundColor: interpolateColor("#030712" /* gray-800 */, "#3b82f6" /* blue-500 */, value)}}
+      className={classNames("flex justify-center items-center m-0 px-1.5 py-0.5 rounded-md transition-[background-color,outline-color] outline-2 outline-transparent", { "font-mono border-1 border-blue-800": isQValue }, { "outline-white!": highlighted })}
+      style={{ backgroundColor: interpolateColor("#030712" /* gray-800 */, "#3b82f6" /* blue-500 */, value) }}
     >{text}</div>;
   }
 
@@ -215,7 +215,7 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
   }
 
   return (
-    <div className="grid gap-2" style={{gridTemplateColumns: `repeat(${columnLabels.length + 1}, auto)`}}>
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columnLabels.length + 1}, auto)` }}>
       <div></div>
       {columnLabels.map((col, i) => {
         // column label
@@ -227,7 +227,7 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
   );
 }
 
-function LabeledValues({ label, table }: { label: string, table: { [key: string]: number } }) {
+function LabeledValues({ label, table }: { label: string, table: { [key: string]: string } }) {
   return (
     <div>
       {label}:<br />
