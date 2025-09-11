@@ -55,17 +55,14 @@ dynamixel-sdk = ">=3.7.31, <4"
 ## rpi-only ## "rpi-lgpio" = ">=0.0.6"
 
 [feature.dev.dependencies]
-python-lsp-server-base = "*"
-python-lsp-server = "*"
-pylsp-mypy = ">=0.6.6,<0.7"
-python-lsp-ruff = ">=2.2.2,<3"
-pyls-memestra = ">=0.0.16,<0.0.17"
 types-setuptools = ">=79.0.0.20250422,<80"
 types-flask = ">=1.1.6,<2"
+jedi-language-server = ">=0.45.1,<0.46"
 
 [feature.dev.pypi-dependencies]
 types-flask-cors = ">=5.0.0.20250413, <6"
 types-torch = ">=0.1.1, <0.2"
+ty = ">=0.0.1a20, <0.0.1a21"
 
 [environments]
 default = ["dev"]
