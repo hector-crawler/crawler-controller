@@ -4,17 +4,19 @@ from dataclasses import dataclass
 import dynamixel_sdk as dxl  # type: ignore
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32  # type: ignore
+from std_msgs.msg import Bool, Int32  # type: ignore
 
 PROTOCOL_VERSION = 2.0
 BAUDRATE = 57600
 DEVICENAME = "/dev/ttyUSB0"
 
+SHUTDOWN_MEM_ADDR = 63
 TORQUE_MEM_ADDR = 64
 TORQUE_ENABLE = 1
+HW_ERR_STAT_MEM_ADDR = 70
 PROFILE_VELOCITY_MEM_ADDR = 112
-PROFILE_VELOCITY = 10000
 GOAL_POS_MEM_ADDR = 116
+MOVING_MEM_ADDR = 122
 PRESENT_POS_MEM_ADDR = 132
 
 
@@ -24,6 +26,7 @@ class MotorData:
     id: int
     min_limit: int
     max_limit: int
+    velocity: int
 
 
 class MotorsNode(Node):
@@ -34,19 +37,35 @@ class MotorsNode(Node):
         self.declare_parameter("arm_id", 6)
         arm_id = self.get_parameter("arm_id").get_parameter_value().integer_value
         self.declare_parameter("arm_min_limit", 900)
-        arm_min_limit = self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        arm_min_limit = (
+            self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        )
         self.declare_parameter("arm_max_limit", 1500)
-        arm_max_limit = self.get_parameter("arm_max_limit").get_parameter_value().integer_value
-        self.arm = MotorData("Arm", arm_id, arm_min_limit, arm_max_limit)
+        arm_max_limit = (
+            self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        )
+        self.declare_parameter("arm_speed", 10000)
+        arm_speed = self.get_parameter("arm_speed").get_parameter_value().integer_value
+        self.arm = MotorData("Arm", arm_id, arm_min_limit, arm_max_limit, arm_speed)
 
         # hand parameters
         self.declare_parameter("hand_id", 7)
         hand_id = self.get_parameter("hand_id").get_parameter_value().integer_value
         self.declare_parameter("hand_min_limit", 2500)
-        hand_min_limit = self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        hand_min_limit = (
+            self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        )
         self.declare_parameter("hand_max_limit", 3300)
-        hand_max_limit = self.get_parameter("hand_max_limit").get_parameter_value().integer_value
-        self.hand = MotorData("Hand", hand_id, hand_min_limit, hand_max_limit)
+        hand_max_limit = (
+            self.get_parameter("hand_max_limit").get_parameter_value().integer_value
+        )
+        self.declare_parameter("hand_speed", 10000)
+        hand_speed = (
+            self.get_parameter("hand_speed").get_parameter_value().integer_value
+        )
+        self.hand = MotorData(
+            "Hand", hand_id, hand_min_limit, hand_max_limit, hand_speed
+        )
 
         queue_len = 5
         self.create_subscription(Int32, "/crawler/arm/move", self.move_arm, queue_len)
@@ -70,7 +89,14 @@ class MotorsNode(Node):
         for motor in [self.arm, self.hand]:
             self.setup_motor(motor)
 
-        self.create_timer(0.5, self.update_motor_positions, autostart=True)
+        self.moving_status_publisher = self.create_publisher(
+            Bool, "/crawler/motors/moving", queue_len
+        )
+        interval_seconds = 0.1
+        self.create_timer(interval_seconds, self.update_moving_status, autostart=True)
+
+        interval_seconds = 0.5
+        self.create_timer(interval_seconds, self.update_motor_positions, autostart=True)
 
     def move_arm(self, msg):
         step = msg.data
@@ -92,7 +118,7 @@ class MotorsNode(Node):
 
     def setup_motor(self, motor: MotorData) -> None:
         comm_result, error = self.packet_handler.write4ByteTxRx(
-            self.port_handler, motor.id, PROFILE_VELOCITY_MEM_ADDR, PROFILE_VELOCITY
+            self.port_handler, motor.id, PROFILE_VELOCITY_MEM_ADDR, motor.velocity
         )
         if comm_result != dxl.COMM_SUCCESS:
             self.get_logger().error(f"Failed to set profile velocity for {motor.name}")
@@ -135,11 +161,11 @@ class MotorsNode(Node):
 Error occurred while reading position of motor {motor.name}
 Error code: {self.packet_handler.getRxPacketError(error)}""")
             data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, 63
+                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
             )
             self.get_logger().fatal(f"SHUTDOWN: {data}")
             data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, 70
+                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
             )
             self.get_logger().fatal(f"ERROR: {data}")
 
@@ -160,17 +186,44 @@ Error code: {self.packet_handler.getRxPacketError(error)}""")
             )
         elif error != 0:
             data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, 63
+                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
             )
             self.get_logger().fatal(f"SHUTDOWN: {data}")
             data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, 70
+                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
             )
             self.get_logger().fatal(f"ERROR: {data}")
-
             self.get_logger().fatal(f"Failed to move {motor.name}, error: {error}")
 
         return desired_position
+
+    def is_moving(self, motor) -> bool:
+        is_moving, comm_result, error = self.packet_handler.read1ByteTxRx(
+            self.port_handler, motor.id, MOVING_MEM_ADDR
+        )
+        if comm_result != dxl.COMM_SUCCESS:
+            self.get_logger().fatal(
+                f"Failed to communicate with {motor.name}, result: {comm_result}"
+            )
+        elif error != 0:
+            data, comm_result, error = self.packet_handler.read1ByteTxRx(
+                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
+            )
+            self.get_logger().fatal(f"SHUTDOWN: {data}")
+            data, comm_result, error = self.packet_handler.read1ByteTxRx(
+                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
+            )
+            self.get_logger().fatal(f"ERROR: {data}")
+            self.get_logger().fatal(
+                f"Failed to read from motor {motor.name}, error: {error}"
+            )
+
+        return is_moving == 1
+
+    def update_moving_status(self):
+        hand_moving = self.is_moving(self.hand)
+        arm_moving = self.is_moving(self.arm)
+        self.moving_status_publisher.publish(Bool(data=hand_moving or arm_moving))
 
 
 class MockMotorsNode(Node):
