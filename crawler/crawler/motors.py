@@ -116,30 +116,24 @@ class MotorsNode(Node):
         self.get_logger().info(f"Hand position: {position}")
         self.hand_publisher.publish(Int32(data=position))
 
+    def handle_errors(self, m: MotorData, comm_res: int, err: int, msg: str) -> None:
+        if comm_res != dxl.COMM_SUCCESS:
+            self.get_logger().error(f"COMMUNICATION FAIL: {msg} for motor {m.name}")
+        elif err != 0:
+            self.get_logger().error(
+                f"""ERROR: {msg} for motor {m.name}: {self.packet_handler.getRxPacketError(err)}"""
+            )
+
     def setup_motor(self, motor: MotorData) -> None:
         comm_result, error = self.packet_handler.write4ByteTxRx(
             self.port_handler, motor.id, PROFILE_VELOCITY_MEM_ADDR, motor.velocity
         )
-        if comm_result != dxl.COMM_SUCCESS:
-            self.get_logger().error(f"Failed to set profile velocity for {motor.name}")
-        elif error != 0:
-            self.get_logger().error(
-                f"Error occurred while setting profile velocity for {motor.name}:"  # error occured here, should probably log error and/or comm_result
-                + self.packet_handler.getRxPacketError(error)
-                + str(comm_result)
-            )
+        self.handle_error(motor, comm_result, error, "Setting velocity")
 
         comm_result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler, motor.id, TORQUE_MEM_ADDR, TORQUE_ENABLE
         )
-        if comm_result != dxl.COMM_SUCCESS:
-            self.get_logger().error(f"Failed to enable torque for {motor.name}")
-        elif error != 0:
-            self.get_logger().error(
-                f"Error occurred while enabling torque for {motor.name}:"  # error occured here, should probably log error and/or comm_result
-                + self.packet_handler.getRxPacketError(error)
-                + str(comm_result)
-            )
+        self.handle_error(motor, comm_result, error, "Enabling torque")
 
     def update_motor_positions(self) -> None:
         self.arm_position = self.read_motor_position(self.arm)
@@ -154,21 +148,7 @@ class MotorsNode(Node):
         pos, comm_result, error = self.packet_handler.read4ByteTxRx(
             self.port_handler, motor.id, PRESENT_POS_MEM_ADDR
         )
-        if comm_result != dxl.COMM_SUCCESS:
-            self.get_logger().error(f"Failed to read position of {motor.name}")
-        elif error != 0:
-            self.get_logger().error(f"""
-Error occurred while reading position of motor {motor.name}
-Error code: {self.packet_handler.getRxPacketError(error)}""")
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
-            )
-            self.get_logger().fatal(f"SHUTDOWN: {data}")
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
-            )
-            self.get_logger().fatal(f"ERROR: {data}")
-
+        self.handle_error(motor, comm_result, error, "Reading position")
         return pos
 
     def move_motor(self, motor: MotorData, step: int) -> int:
@@ -180,44 +160,14 @@ Error code: {self.packet_handler.getRxPacketError(error)}""")
         comm_result, error = self.packet_handler.write4ByteTxRx(
             self.port_handler, motor.id, GOAL_POS_MEM_ADDR, desired_position
         )
-        if comm_result != dxl.COMM_SUCCESS:
-            self.get_logger().fatal(
-                f"Failed to communicate with {motor.name}, result: {comm_result}"
-            )
-        elif error != 0:
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
-            )
-            self.get_logger().fatal(f"SHUTDOWN: {data}")
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
-            )
-            self.get_logger().fatal(f"ERROR: {data}")
-            self.get_logger().fatal(f"Failed to move {motor.name}, error: {error}")
-
+        self.handle_error(motor, comm_result, error, "Moving")
         return desired_position
 
     def is_moving(self, motor) -> bool:
         is_moving, comm_result, error = self.packet_handler.read1ByteTxRx(
             self.port_handler, motor.id, MOVING_MEM_ADDR
         )
-        if comm_result != dxl.COMM_SUCCESS:
-            self.get_logger().fatal(
-                f"Failed to communicate with {motor.name}, result: {comm_result}"
-            )
-        elif error != 0:
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, SHUTDOWN_MEM_ADDR
-            )
-            self.get_logger().fatal(f"SHUTDOWN: {data}")
-            data, comm_result, error = self.packet_handler.read1ByteTxRx(
-                self.port_handler, motor.id, HW_ERR_STAT_MEM_ADDR
-            )
-            self.get_logger().fatal(f"ERROR: {data}")
-            self.get_logger().fatal(
-                f"Failed to read from motor {motor.name}, error: {error}"
-            )
-
+        self.handle_error(motor, comm_result, error, "Reading Movement")
         return is_moving == 1
 
     def update_moving_status(self):
