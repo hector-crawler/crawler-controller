@@ -66,6 +66,9 @@ types-flask-cors = ">=5.0.0.20250413, <6"
 types-torch = ">=0.1.1, <0.2"
 ty = ">=0.0.1a20, <0.0.1a21"
 
+[feature.raspi-only.pypi-dependencies]
+rpi-lgpio = "*"
+
 [environments]
 default = ["dev"]
-raspi = []
+raspi = ["raspi-only"]
