@@ -188,11 +188,15 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
 function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: string[], rowLabels: string[], values: number[] }) {
   const cell = (key: string, text: string, isQValue: boolean, value: number) => {
     const [highlighted, setHighlighted] = useState(false);
+    const [lastValue, setLastValue] = useState(value);
     if (isQValue) {
       useEffect(() => {
-        setHighlighted(true);
-        const timeout = setTimeout(() => setHighlighted(false), 750);
-        return () => clearTimeout(timeout);
+        if (value !== lastValue) {
+          setLastValue(value);
+          setHighlighted(true);
+          const timeout = setTimeout(() => setHighlighted(false), 750);
+          return () => clearTimeout(timeout);
+        }
       }, [value])
     }
     return <div key={key}
