@@ -6,6 +6,7 @@ import { interpolateColor } from "~/ui/util";
 import classNames from "classnames";
 import { Line } from "react-chartjs-2";
 import { CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from "chart.js";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -92,18 +93,20 @@ function RLEnvironmentControl({ api, rlInternals }: { api: API, rlInternals: RLI
   );
 }
 
+const defaultQLearningConfiguration: QLearningConfiguration = {
+  armStates: 3,
+  handStates: 3,
+  armStep: 200,
+  handStep: 200,
+  learningRate: 0.5,
+  explorationRate: 1.0,
+  explorationDecayFactor: 0.95,
+  minExplorationRate: 0.01,
+  discountFactor: 0.99,
+};
+
 function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInternals }) {
-  const [configuration, setConfiguration] = useState<QLearningConfiguration>({
-    armStates: 3,
-    handStates: 3,
-    armStep: 200,
-    handStep: 200,
-    learningRate: 0.5,
-    explorationRate: 1.0,
-    explorationDecayFactor: 0.95,
-    minExplorationRate: 0.01,
-    discountFactor: 0.99,
-  })
+  const [configuration, setConfiguration] = useLocalStorage("qLearningConfiguration", defaultQLearningConfiguration);
   const start = async () => {
     await api.startRLQLearning(configuration);
   }
@@ -136,10 +139,10 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
             <InputField type="number" label="min exploration rate" value={configuration.minExplorationRate} onChange={str => setConfiguration(config => ({ ...config, minExplorationRate: Number(str) }))} />
           </div>
           <InputField type="number" label="discount factor" value={configuration.discountFactor} onChange={str => setConfiguration(config => ({ ...config, discountFactor: Number(str) }))} />
-        </div>
-
-        <div className="width-full flex justify-end">
-          <LargeButton onClick={start} smallPadding={true}>Start</LargeButton>
+          <div className="flex justify-between mt-2">
+            <LargeButton smallPadding={true} disabled={JSON.stringify(configuration) === JSON.stringify(defaultQLearningConfiguration)} onClick={() => setConfiguration(defaultQLearningConfiguration)}>Reset to default</LargeButton>
+            <LargeButton onClick={start} smallPadding={true}>Start</LargeButton>
+          </div>
         </div>
       </>}
 
