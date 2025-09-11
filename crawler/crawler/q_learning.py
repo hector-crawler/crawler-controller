@@ -1,16 +1,20 @@
 import numpy as np
 import rclpy
 from crawler_msgs.msg import (
-    Action, # type: ignore
-    QLearningInternalState, # type: ignore
-    QLearningParameters, # type: ignore
-    StateReward, # type: ignore
+    Action,  # type: ignore
+    QLearningInternalState,  # type: ignore
+    QLearningParameters,  # type: ignore
+    StateReward,  # type: ignore
 )
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
 
 from .move import MOVES_COUNT, Move
+
+
+def scaled_sigmoid(self, x: int) -> int:
+    return 1 / (1 + np.exp(-x * 10))
 
 
 class QLearningNode(Node):
@@ -21,13 +25,21 @@ class QLearningNode(Node):
 
         # parameters for arm/hand limits
         self.declare_parameter("arm_min_limit", 900)
-        self.arm_min_limit = self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        self.arm_min_limit = (
+            self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        )
         self.declare_parameter("arm_max_limit", 1500)
-        self.arm_max_limit = self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        self.arm_max_limit = (
+            self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        )
         self.declare_parameter("hand_min_limit", 2500)
-        self.hand_min_limit = self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        self.hand_min_limit = (
+            self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        )
         self.declare_parameter("hand_max_limit", 3300)
-        self.hand_max_limit = self.get_parameter("hand_max_limit").get_parameter_value().integer_value
+        self.hand_max_limit = (
+            self.get_parameter("hand_max_limit").get_parameter_value().integer_value
+        )
 
         # start subscriber
         self.running = False
@@ -103,12 +115,20 @@ Q-learning parameters:
     def receive_arm_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_arm_state = int((msg.data - self.arm_min_limit) / (self.arm_max_limit - self.arm_min_limit) * self.arm_states)
+        self.curr_arm_state = int(
+            (msg.data - self.arm_min_limit)
+            / (self.arm_max_limit - self.arm_min_limit)
+            * self.arm_states
+        )
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_hand_state = int((msg.data - self.hand_min_limit) / (self.hand_max_limit - self.hand_min_limit) * self.hand_states)
+        self.curr_hand_state = int(
+            (msg.data - self.hand_min_limit)
+            / (self.hand_max_limit - self.hand_min_limit)
+            * self.hand_states
+        )
 
     def send_move(self, m: Move) -> None:
         act = Action()
@@ -149,11 +169,12 @@ Q-learning parameters:
 
     def learn(self, rw: StateReward) -> None:
         idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
+        reward = scaled_sigmoid(rw.reward)
         predicted_value = self.q_table[idx]
         target_value = (
             self.q_table[self.curr_arm_state, self.curr_hand_state].max()
             * self.discount_factor
-            + rw.reward
+            + reward
         )
         self.q_table[idx] = predicted_value + self.learning_rate * (
             target_value - predicted_value

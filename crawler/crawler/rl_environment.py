@@ -54,6 +54,7 @@ class RLEnvironmentNode(Node):
         self.last_left_encoder_position = 0
         self.last_right_encoder_position = 0
         self.initial_encoder_positions = 0
+        self.highest_progress_so_far = 1
 
         # handle actions (move arm, hand)
         self.arm_publisher = self.create_publisher(Int32, "/crawler/arm/move", 5)
@@ -92,10 +93,13 @@ class RLEnvironmentNode(Node):
     #   - send next state and reward to /crawler/rl/state_reward
 
     def publish_state_reward(self) -> None:
+        left_progress = self.left_encoder_position - self.last_left_encoder_position
+        right_progress = self.right_encoder_position - self.last_right_encoder_position
+        total_progress = left_progress + right_progress
+        self.highest_progress_so_far = max(self.highest_progress_so_far, total_progress)
+        reward = total_progress / self.highest_progress_so_far
+
         # calculate reward by adding difference in encoder positions
-        reward = (self.left_encoder_position - self.last_left_encoder_position) + (
-            self.right_encoder_position - self.last_right_encoder_position
-        )
         self.last_left_encoder_position = self.left_encoder_position
         self.last_right_encoder_position = self.right_encoder_position
 
@@ -110,7 +114,7 @@ class RLEnvironmentNode(Node):
         msg = StateReward()
         msg.arm_position = self.arm_position
         msg.hand_position = self.hand_position
-        msg.reward = float(reward)
+        msg.reward = reward
         self.state_reward_publisher.publish(msg)
         self.get_logger().info(
             f"Publishing state: arm_position={msg.arm_position}, hand_position={msg.hand_position}, reward={msg.reward}"
