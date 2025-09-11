@@ -198,6 +198,9 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
     valueRows.push(values.slice(i, i + cols));
   }
 
+  const minQValue = Math.min(...values);
+  const maxQValue = Math.max(...values);
+
   const bodyCells = []
   for (let i = 0; i < rowLabels.length; i++) {
     const averageRowValue = valueRows[i].reduce((acc, value) => acc + value, 0) / valueRows[i].length;
@@ -208,7 +211,7 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
     bodyCells.push(
       // value cells
       ...(valueRows[i].map((value, j) => {
-        const relativeQValue = value; //(value - minQValue) / (maxQValue - minQValue);
+        const relativeQValue = (value - minQValue) / (maxQValue - minQValue);
         return cell(`${i}`, value.toFixed(3), true, relativeQValue);
       }))
     )
