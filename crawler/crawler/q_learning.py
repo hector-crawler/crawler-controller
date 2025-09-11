@@ -169,16 +169,15 @@ Q-learning parameters:
 
     def learn(self, rw: StateReward) -> None:
         idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
+
+        value_of_next_action = self.q_table[
+            self.curr_arm_state, self.curr_hand_state
+        ].max()
         reward = sigmoid(rw.reward)
-        predicted_value = self.q_table[idx]
-        target_value = (
-            self.q_table[self.curr_arm_state, self.curr_hand_state].max()
-            * self.discount_factor
-            + reward
-        )
-        self.q_table[idx] = predicted_value + self.learning_rate * (
-            target_value - predicted_value
-        )
+        quality_of_action = (value_of_next_action * self.discount_factor + reward) / 2
+        difference = quality_of_action - self.q_table[idx]
+        self.q_table[idx] += difference * self.learning_rate
+
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
 
