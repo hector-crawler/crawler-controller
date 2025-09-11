@@ -209,19 +209,19 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
 
   const minQValue = Math.min(...values);
   const maxQValue = Math.max(...values);
+  const relativizeQValue = (value: number) => (value - minQValue) / (maxQValue - minQValue);
 
   const bodyCells = []
   for (let i = 0; i < rowLabels.length; i++) {
     const averageRowValue = valueRows[i].reduce((acc, value) => acc + value, 0) / valueRows[i].length;
     bodyCells.push(
       // row label
-      cell(`row-label-${i}`, rowLabels[i], false, averageRowValue)
+      cell(`row-label-${i}`, rowLabels[i], false, relativizeQValue(averageRowValue))
     )
     bodyCells.push(
       // value cells
       ...(valueRows[i].map((value, j) => {
-        const relativeQValue = (value - minQValue) / (maxQValue - minQValue);
-        return cell(`${i}`, value.toFixed(3), true, relativeQValue);
+        return cell(`${i}`, value.toFixed(3), true, relativizeQValue(value));
       }))
     )
   }
@@ -232,7 +232,7 @@ function HeatmapTable({ columnLabels, rowLabels, values }: { columnLabels: strin
       {columnLabels.map((col, i) => {
         // column label
         const averageColValue = valueRows.map(row => row[i]).reduce((acc, value) => acc + value, 0) / valueRows.length;
-        return cell(`col-label-${i}`, col, false, averageColValue);
+        return cell(`col-label-${i}`, col, false, relativizeQValue(averageColValue));
       })}
       {bodyCells}
     </div>
