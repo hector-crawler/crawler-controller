@@ -1,10 +1,17 @@
 import time
+from enum import Enum
 from typing import List
 
 import rclpy
 from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward  # type: ignore
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
+
+
+class LoopState(Enum):
+    STOPPED = 0
+    WAITING = 1
+    EXECUTING = 2
 
 
 class RLEnvironmentNode(Node):
@@ -140,11 +147,11 @@ class RLEnvironmentNode(Node):
             f"Publishing state: arm_position={msg.arm_position}, hand_position={msg.hand_position}, reward={msg.reward}"
         )
         self.latest_state_reward = msg
-        self.loop_state = 1
+        self.loop_state = LoopState.WAITING
         self.publish_internals()
 
     def start_rl(self, _) -> None:
-        if self.loop_state != 0:
+        if self.loop_state != LoopState.STOPPED:
             raise Exception("Attempted to start RL, but it is already running!")
         self.get_logger().info("Starting RL")
 
@@ -160,7 +167,7 @@ class RLEnvironmentNode(Node):
         self.publish_state_reward()
 
     def execute_action(self, msg: Action) -> None:
-        if self.loop_state == 0:
+        if self.loop_state == LoopState.STOPPED:
             self.get_logger().info(
                 "Attempted to execute action, but RL is not running!"
             )
@@ -175,7 +182,7 @@ class RLEnvironmentNode(Node):
         self.get_logger().info(
             f"Executing action: move_arm={move_arm}, move_hand={move_hand}"
         )
-        self.loop_state = 2
+        self.loop_state = LoopState.EXECUTING
         self.publish_internals()
 
         time.sleep(0.3)  # TODO: Wait gracefully for motors to stop
@@ -183,7 +190,7 @@ class RLEnvironmentNode(Node):
 
     def publish_internals(self) -> None:
         msg = RLEnvironmentInternals()
-        msg.loop_state = self.loop_state
+        msg.loop_state = self.loop_state.value
         msg.latest_state_reward = self.latest_state_reward
         msg.latest_action = self.latest_action
         msg.progress = self.progress
@@ -195,7 +202,7 @@ class RLEnvironmentNode(Node):
         self.get_logger().info("Stopping RL")
 
     def reset(self) -> None:
-        self.loop_state = 0  # 0 = stopped, 1 = waiting for action, 2 = executing action
+        self.loop_state = LoopState.STOPPED
         self.latest_action = Action(move_arm=0, move_hand=0)
         self.initial_encoder_positions = 0
         self.progress: List[int] = []
