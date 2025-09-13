@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 import rclpy
 from crawler_msgs.msg import (
@@ -8,13 +9,25 @@ from crawler_msgs.msg import (
 )
 from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32  # type: ignore
+from std_msgs.msg import Empty, Int32, String  # type: ignore
+from enum import Enum
 
 from .move import MOVES_COUNT, Move
 
 
 def sigmoid(x: float) -> float:
     return 1 / (1 + np.exp(-x))
+
+class MoveMode(Enum):
+    USER_WAIT = 0
+    USER_ARM_UP = 1
+    USER_ARM_DOWN = 2
+    USER_HAND_UP = 3
+    USER_HAND_DOWN = 4
+    USER_STEP = 5
+    USER_STEP_EXPLORATION = 6
+    USER_STEP_EXPLOITATION = 7
+    AUTOMATIC = 8
 
 
 class QLearningNode(Node):
@@ -65,6 +78,10 @@ class QLearningNode(Node):
             Int32, "/crawler/hand/position", self.receive_hand_pos, queue_len
         )
 
+        self.create_subscription(
+            String, "/crawler/rl/q_learning/set_move_mode", self.set_move_mode, queue_len
+        )
+
         self.action_publisher = self.create_publisher(
             Action, "/crawler/rl/action", queue_len
         )
@@ -91,6 +108,10 @@ class QLearningNode(Node):
         self.min_explor_rate = parameters.min_explor_rate
         self.discount_factor = parameters.discount_factor
 
+        # move mode
+        self.move_mode = MoveMode.USER_WAIT if parameters.initial_move_mode_wait else MoveMode.AUTOMATIC
+        self.waiting_for_user_move = False
+
         self.get_logger().info(
             f"""
 Q-learning parameters:
@@ -111,6 +132,17 @@ Q-learning parameters:
 
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
+    
+    def set_move_mode(self, msg) -> None:
+        if msg.data in [mode.name for mode in MoveMode]:
+            self.move_mode = MoveMode[msg.data]
+            self.get_logger().info(f"Set move mode to {self.move_mode}")
+            if self.waiting_for_user_move:
+                self.pick_move_and_send()
+                self.waiting_for_user_move = False
+            self.publish_internal_state()
+        else:
+            self.get_logger().error(f"Unknown move mode {msg.data}!")
 
     def receive_arm_pos(self, msg) -> None:
         if not self.running:
@@ -148,13 +180,57 @@ Q-learning parameters:
 
         self.action_publisher.publish(act)
 
-    def pick_move(self) -> Move:
-        if rand.random() < self.explor_rate:
-            something_new = rand.choice(np.array(Move))
-            self.get_logger().info(f"Randomly selected move {something_new}")
-            self.move_is_exploration = True
-            return something_new
+    def pick_move_and_send(self) -> None:
+        if not self.running:
+            return
+        move = self.pick_move()
+        if move is not None:
+            self.last_move = move
+            self.send_move(self.last_move)
 
+    def pick_move(self) -> Optional[Move]:
+        match self.move_mode:
+            case MoveMode.USER_WAIT:
+                self.waiting_for_user_move = True
+            case MoveMode.USER_ARM_UP:
+                self.move_mode = MoveMode.USER_WAIT
+                return Move.ARM_UP
+            case MoveMode.USER_ARM_DOWN:
+                self.move_mode = MoveMode.USER_WAIT
+                return Move.ARM_DOWN
+            case MoveMode.USER_HAND_UP:
+                self.move_mode = MoveMode.USER_WAIT
+                return Move.HAND_UP
+            case MoveMode.USER_HAND_DOWN:
+                self.move_mode = MoveMode.USER_WAIT
+                return Move.HAND_DOWN
+            case MoveMode.USER_STEP:
+                self.move_mode = MoveMode.USER_WAIT
+                return self.pick_move_via_q_learning()
+            case MoveMode.USER_STEP_EXPLORATION:
+                self.move_mode = MoveMode.USER_WAIT
+                return self.pick_move_exploration()
+            case MoveMode.USER_STEP_EXPLOITATION:
+                self.move_mode = MoveMode.USER_WAIT
+                return self.pick_move_exploitation()
+            case MoveMode.AUTOMATIC:
+                return self.pick_move_via_q_learning()
+            case _:
+                self.get_logger().error(f"Unknown move mode {move_mode}!")
+    
+    def pick_move_via_q_learning(self) -> Move:
+        if rand.random() < self.explor_rate:
+            return self.pick_move_exploration()
+        else:
+            return self.pick_move_exploitation()
+    
+    def pick_move_exploration(self) -> Move:
+        something_new = rand.choice(np.array(Move))
+        self.get_logger().info(f"Randomly selected move {something_new}")
+        self.move_is_exploration = True
+        return something_new
+
+    def pick_move_exploitation(self) -> Move:
         pool = self.q_table[self.curr_arm_state][self.curr_hand_state]
         move_idx = np.argmax(pool).item()
         move = Move(move_idx)
@@ -164,8 +240,7 @@ Q-learning parameters:
 
     def get_reward(self, msg: StateReward) -> None:
         self.learn(msg)
-        self.last_move = self.pick_move()
-        self.send_move(self.last_move)
+        self.pick_move_and_send()
 
     def learn(self, rw: StateReward) -> None:
         idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
@@ -221,6 +296,9 @@ Q-learning parameters:
         msg.q_table_values = self.q_table.flatten().tolist()
 
         msg.move_is_exploration = self.move_is_exploration
+
+        msg.move_mode = self.move_mode.name
+        msg.waiting_for_user_move = self.waiting_for_user_move
 
         self.internals_publisher.publish(msg)
 

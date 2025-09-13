@@ -1,4 +1,4 @@
-import { InputField, LargeButton } from "~/components";
+import { Checkbox, InputField, LargeButton } from "~/components";
 import type { Route } from "./+types/home";
 import { API, type QLearningConfiguration, type RLInternals } from "~/api/api";
 import { useEffect, useState } from "react";
@@ -103,6 +103,7 @@ const defaultQLearningConfiguration: QLearningConfiguration = {
   explorationDecayFactor: 0.95,
   minExplorationRate: 0.01,
   discountFactor: 0.99,
+  initialMoveModeWait: false,
 };
 
 function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInternals }) {
@@ -139,6 +140,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
             <InputField type="number" label="min exploration rate" value={configuration.minExplorationRate} onChange={str => setConfiguration(config => ({ ...config, minExplorationRate: Number(str) }))} />
           </div>
           <InputField type="number" label="discount factor" value={configuration.discountFactor} onChange={str => setConfiguration(config => ({ ...config, discountFactor: Number(str) }))} />
+          <Checkbox label="initial move mode: wait for user" value={configuration.initialMoveModeWait} onChange={checked => setConfiguration(config => ({ ...config, initialMoveModeWait: checked }))} />
           <div className="flex justify-between mt-2">
             <LargeButton smallPadding={true} disabled={JSON.stringify(configuration) === JSON.stringify(defaultQLearningConfiguration)} onClick={() => setConfiguration(defaultQLearningConfiguration)}>Reset to default</LargeButton>
             <LargeButton onClick={start} smallPadding={true}>Start</LargeButton>
@@ -173,6 +175,20 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
                 ? <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-full">?</div> Exploration</div>
                 : <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-sm">&gt;</div> Exploitation</div>
               )}
+
+              {/* move mode */}
+              <div className="flex flex-wrap gap-2">
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_WAIT")} disabled={rlInternals.qLearning.moveMode === "USER_WAIT"}>wait</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_UP")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_UP"}>arm up</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_DOWN"}>arm down</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_UP")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_UP"}>hand up</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_DOWN"}>hand down</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP")} disabled={rlInternals.qLearning.moveMode === "USER_STEP"}>step</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLORATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLORATION"}>step (explore)</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLOITATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLOITATION"}>step (exploit)</LargeButton>
+                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("AUTOMATIC")} disabled={rlInternals.qLearning.moveMode === "AUTOMATIC"}>automatic</LargeButton>
+                {rlInternals.qLearning.waitingForUserMove && <div className="bg-red-500 animate-[pulse_700ms_infinite] size-5 rounded-full"></div>}
+              </div>
             </div>
           </div>
 

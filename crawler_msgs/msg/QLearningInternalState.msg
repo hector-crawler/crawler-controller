@@ -13,3 +13,6 @@ string[] q_table_rows
 float64[] q_table_values
 
 bool move_is_exploration
+
+string move_mode
+bool waiting_for_user_move

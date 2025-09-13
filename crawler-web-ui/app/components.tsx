@@ -47,3 +47,18 @@ export function InputField({ value, onChange, type, label, disabled }: { value?:
     </div>
   );
 }
+
+export function Checkbox({ value, onChange, label, disabled }: { value: boolean, onChange: (value: boolean) => void, label?: string, disabled?: boolean }) {
+  return (
+    <div className="flex gap-2 items-center mt-1">
+      <input
+        disabled={disabled}
+        type="checkbox"
+        checked={value}
+        onChange={(e) => onChange(e.target.checked)}
+        className="border-2 border-blue-500 rounded-md w-5 h-5 disabled:border-gray-600"
+      />
+      {label && <label className="block text-sm mb-1 relative translate-y-0.5">{label}</label>}
+    </div>
+  );
+}
