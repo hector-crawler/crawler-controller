@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from threading import Thread
+from typing import MutableSequence
 
 import rclpy
 import rclpy.logging
@@ -76,6 +77,7 @@ class WebApiPublisher(Node):
         explor_decay_factor: float,
         min_explor_rate: float,
         discount_factor: float,
+        initial_q_table_values: MutableSequence[float],
         initial_move_mode_wait: bool,
     ):
         self.q_learning_start_publisher.publish(
@@ -89,6 +91,7 @@ class WebApiPublisher(Node):
                 explor_decay_factor=explor_decay_factor,
                 min_explor_rate=min_explor_rate,
                 discount_factor=discount_factor,
+                initial_q_table_values=initial_q_table_values,
                 initial_move_mode_wait=initial_move_mode_wait,
             )
         )
@@ -290,6 +293,7 @@ def api_rl_start():
     explor_decay_factor = float(request.json.get("explorationDecayFactor"))
     min_explor_rate = float(request.json.get("minExplorationRate"))
     discount_factor = float(request.json.get("discountFactor"))
+    initial_q_table_values = [float(x) for x in request.json.get("initialQTableValues")]
     initial_move_mode_wait = bool(request.json.get("initialMoveModeWait"))
     publisher.start_rl_q_learning(
         arm_states,
@@ -301,6 +305,7 @@ def api_rl_start():
         explor_decay_factor,
         min_explor_rate,
         discount_factor,
+        initial_q_table_values,
         initial_move_mode_wait,
     )
     return "ok"

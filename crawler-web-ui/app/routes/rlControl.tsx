@@ -1,6 +1,6 @@
 import { Checkbox, InputField, LargeButton } from "~/components";
 import type { Route } from "./+types/home";
-import { API, type QLearningConfiguration, type RLInternals } from "~/api/api";
+import { API, deserializeModel, serializeModel, type QLearningConfiguration, type RLInternals } from "~/api/api";
 import { useEffect, useState } from "react";
 import { interpolateColor } from "~/ui/util";
 import classNames from "classnames";
@@ -104,6 +104,7 @@ const defaultQLearningConfiguration: QLearningConfiguration = {
   minExplorationRate: 0.01,
   discountFactor: 0.99,
   initialMoveModeWait: false,
+  initialQTableValues: [], // means undefined
 };
 
 function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInternals }) {
@@ -113,6 +114,26 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
   }
   const stop = async () => {
     await api.stopRL();
+  }
+
+  const [modelImport, setModelImport] = useState("");
+  useEffect(() => {
+    try {
+      const initialQTableValues = modelImport.length > 0 ? deserializeModel(modelImport) : [];
+      setConfiguration(config => ({ ...config, initialQTableValues }));
+    } catch (e) {
+      if (e instanceof Error && e.message) {
+        alert(`Error parsing model: ${e.message}`)
+      }
+    }
+  }, [modelImport])
+
+  const exportModel = () => {
+    if (rlInternals.qLearning) {
+      const serializedModel = serializeModel(rlInternals.qLearning);
+      navigator.clipboard.writeText(serializedModel);
+      alert("Model copied to clipboard!");
+    }
   }
 
   return (
@@ -140,6 +161,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
             <InputField type="number" label="min exploration rate" value={configuration.minExplorationRate} onChange={str => setConfiguration(config => ({ ...config, minExplorationRate: Number(str) }))} />
           </div>
           <InputField type="number" label="discount factor" value={configuration.discountFactor} onChange={str => setConfiguration(config => ({ ...config, discountFactor: Number(str) }))} />
+          <InputField type="text" label="model import (default: blank model)" value={modelImport} onChange={str => setModelImport(str)}></InputField>
           <Checkbox label="initial move mode: wait for user" value={configuration.initialMoveModeWait} onChange={checked => setConfiguration(config => ({ ...config, initialMoveModeWait: checked }))} />
           <div className="flex justify-between mt-2">
             <LargeButton smallPadding={true} disabled={JSON.stringify(configuration) === JSON.stringify(defaultQLearningConfiguration)} onClick={() => setConfiguration(defaultQLearningConfiguration)}>Reset to default</LargeButton>
@@ -149,55 +171,58 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
       </>}
 
       {/* (active) */}
-      {rlInternals.qLearning && (
-        <div className="flex gap-5 flex-col">
-          <div className="flex gap-5">
-            {/* display Q-table */}
-            <HeatmapTable
-              columnLabels={rlInternals.qLearning.qTableCols}
-              rowLabels={rlInternals.qLearning.qTableRows}
-              values={rlInternals.qLearning.qTableValues}
-            />
+      {
+        rlInternals.qLearning && (
+          <div className="flex gap-5 flex-col">
+            <div className="flex gap-5">
+              {/* display Q-table */}
+              <HeatmapTable
+                columnLabels={rlInternals.qLearning.qTableCols}
+                rowLabels={rlInternals.qLearning.qTableRows}
+                values={rlInternals.qLearning.qTableValues}
+              />
 
-            {/* display parameters */}
-            <div className="flex flex-col gap-3">
-              <LabeledValues label="Parameters" table={{
-                "arm states": rlInternals.qLearning.armStates.toString(),
-                "hand states": rlInternals.qLearning.handStates.toString(),
-                "arm step": rlInternals.qLearning.armStep.toString(),
-                "hand step": rlInternals.qLearning.handStep.toString(),
-                "learning rate": rlInternals.qLearning.learningRate.toString(),
-                "exploration rate": rlInternals.qLearning.explorationRate.toFixed(6),
-                "exploration decay factor": rlInternals.qLearning.explorationDecayFactor.toString(),
-                "discount factor": rlInternals.qLearning.discountFactor.toString(),
-              }} />
-              {(rlInternals.qLearning.moveIsExploration
-                ? <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-full">?</div> Exploration</div>
-                : <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-sm">&gt;</div> Exploitation</div>
-              )}
+              {/* display parameters */}
+              <div className="flex flex-col gap-3">
+                <LabeledValues label="Parameters" table={{
+                  "arm states": rlInternals.qLearning.armStates.toString(),
+                  "hand states": rlInternals.qLearning.handStates.toString(),
+                  "arm step": rlInternals.qLearning.armStep.toString(),
+                  "hand step": rlInternals.qLearning.handStep.toString(),
+                  "learning rate": rlInternals.qLearning.learningRate.toString(),
+                  "exploration rate": rlInternals.qLearning.explorationRate.toFixed(6),
+                  "exploration decay factor": rlInternals.qLearning.explorationDecayFactor.toString(),
+                  "discount factor": rlInternals.qLearning.discountFactor.toString(),
+                }} />
+                {(rlInternals.qLearning.moveIsExploration
+                  ? <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-full">?</div> Exploration</div>
+                  : <div className="flex gap-2 items-center"><div className="border-blue-500 border-3 font-bold size-7 flex justify-center items-center rounded-sm">&gt;</div> Exploitation</div>
+                )}
 
-              {/* move mode */}
-              <div className="flex flex-wrap gap-2">
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_WAIT")} disabled={rlInternals.qLearning.moveMode === "USER_WAIT"}>wait</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_UP")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_UP"}>arm up</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_DOWN"}>arm down</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_UP")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_UP"}>hand up</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_DOWN"}>hand down</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP")} disabled={rlInternals.qLearning.moveMode === "USER_STEP"}>step</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLORATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLORATION"}>step (explore)</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLOITATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLOITATION"}>step (exploit)</LargeButton>
-                <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("AUTOMATIC")} disabled={rlInternals.qLearning.moveMode === "AUTOMATIC"}>automatic</LargeButton>
-                {rlInternals.qLearning.waitingForUserMove && <div className="bg-red-500 animate-[pulse_700ms_infinite] size-5 rounded-full"></div>}
+                {/* move mode */}
+                <div className="flex flex-wrap gap-2">
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_WAIT")} disabled={rlInternals.qLearning.moveMode === "USER_WAIT"}>wait</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_UP")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_UP"}>arm up</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_DOWN"}>arm down</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_UP")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_UP"}>hand up</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_DOWN"}>hand down</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP")} disabled={rlInternals.qLearning.moveMode === "USER_STEP"}>step</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLORATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLORATION"}>step (explore)</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLOITATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLOITATION"}>step (exploit)</LargeButton>
+                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("AUTOMATIC")} disabled={rlInternals.qLearning.moveMode === "AUTOMATIC"}>automatic</LargeButton>
+                  {rlInternals.qLearning.waitingForUserMove && <div className="bg-red-500 animate-[pulse_700ms_infinite] size-5 rounded-full"></div>}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="width-full flex justify-end">
-            <LargeButton onClick={stop} smallPadding={true}>Stop</LargeButton>
+            <div className="width-full flex justify-end gap-2">
+              <LargeButton onClick={exportModel} smallPadding={true}>Export</LargeButton>
+              <LargeButton onClick={stop} smallPadding={true}>Stop</LargeButton>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
 

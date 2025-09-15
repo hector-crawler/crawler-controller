@@ -7,5 +7,5 @@ float64 explor_rate
 float64 explor_decay_factor
 float64 min_explor_rate
 float64 discount_factor
-
+float64[] initial_q_table_values
 bool initial_move_mode_wait

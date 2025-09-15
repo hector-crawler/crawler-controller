@@ -43,6 +43,14 @@ export type RLInternals = {
         waitingForUserMove: boolean,
     }
 }
+const exportTag = "crawler_controller_q_learning_model_v1::";
+export function serializeModel(qLearning: NonNullable<RLInternals["qLearning"]>) {
+    return exportTag + qLearning.qTableValues.join(";");
+}
+export function deserializeModel(serializedModel: string) {
+    if (!serializedModel.startsWith(exportTag)) throw new Error(`Invalid model format: ${serializedModel.split("::")[0] ?? "(unknown)"}`);
+    return serializedModel.slice(exportTag.length).split(";").map(v => parseFloat(v));
+}
 
 export type QLearningConfiguration = {
     armStates: number,
@@ -54,6 +62,7 @@ export type QLearningConfiguration = {
     explorationDecayFactor: number,
     minExplorationRate: number,
     discountFactor: number,
+    initialQTableValues: number[],
     initialMoveModeWait: boolean,
 }
 

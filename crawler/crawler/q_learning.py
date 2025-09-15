@@ -107,6 +107,15 @@ class QLearningNode(Node):
         self.explor_decay_factor = parameters.explor_decay_factor
         self.min_explor_rate = parameters.min_explor_rate
         self.discount_factor = parameters.discount_factor
+        
+        # q table
+        if len(parameters.initial_q_table_values) > 0:
+            self.q_table = np.array(parameters.initial_q_table_values).reshape(self.arm_states, self.hand_states, MOVES_COUNT)
+            self.get_logger().info("Initialized Q-table from parameters")
+        else:
+            # At this point we might also think about adding another dimension for self.last_move
+            self.q_table = np.ones([self.arm_states, self.hand_states, MOVES_COUNT])
+            self.get_logger().info("Initialized Q-table with ones")
 
         # move mode
         self.move_mode = MoveMode.USER_WAIT if parameters.initial_move_mode_wait else MoveMode.AUTOMATIC
@@ -126,9 +135,6 @@ Q-learning parameters:
     Discount factor = {self.discount_factor}
 """
         )
-
-        # At this point we might also think about adding another dimension for self.last_move
-        self.q_table = np.ones([self.arm_states, self.hand_states, MOVES_COUNT])
 
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
