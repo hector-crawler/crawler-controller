@@ -15,8 +15,8 @@ from enum import Enum
 from .move import MOVES_COUNT, Move
 
 
-def scaled_sigmoid(x: float) -> float:
-    return 1 / (1 + np.exp(-x * 10))
+def sigmoid(x: float) -> float:
+    return 1 / (1 + np.exp(-x))
 
 class MoveMode(Enum):
     USER_WAIT = 0
@@ -64,7 +64,7 @@ class QLearningNode(Node):
             QLearningInternalState, "/crawler/rl/q_learning/internals", queue_len
         )
         self.move_is_exploration = False
-        self.create_timer(1.0, self.publish_internal_state)
+        self.create_timer(0.2, self.publish_internal_state)
 
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, queue_len)
         self.create_subscription(
@@ -250,16 +250,15 @@ Q-learning parameters:
 
     def learn(self, rw: StateReward) -> None:
         idx = (self.last_arm_state, self.last_hand_state, self.last_move.value)
-        reward = scaled_sigmoid(rw.reward)
-        predicted_value = self.q_table[idx]
-        target_value = (
-            self.q_table[self.curr_arm_state, self.curr_hand_state].max()
-            * self.discount_factor
-            + reward
-        )
-        self.q_table[idx] = predicted_value + self.learning_rate * (
-            target_value - predicted_value
-        )
+
+        value_of_next_action = self.q_table[
+            self.curr_arm_state, self.curr_hand_state
+        ].max()
+        reward = sigmoid(rw.reward)
+        quality_of_action = (value_of_next_action * self.discount_factor + reward) / 2
+        difference = quality_of_action - self.q_table[idx]
+        self.q_table[idx] += difference * self.learning_rate
+
         self.last_arm_state = self.curr_arm_state
         self.last_hand_state = self.curr_hand_state
 
