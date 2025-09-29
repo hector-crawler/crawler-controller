@@ -124,7 +124,7 @@ class RLEnvironmentNode(Node):
 
         self.standstill_since = self.standstill_since + 1 if reward == 0 else 0
         if self.standstill_since > 3:
-            reward -= 2**self.standstill_since
+            reward -= int(1.1**self.standstill_since)
 
         # calculate reward by adding difference in encoder positions
         self.last_left_encoder_position = self.left_encoder_position
@@ -158,6 +158,7 @@ class RLEnvironmentNode(Node):
         self.initial_encoder_positions = (
             self.left_encoder_position + self.right_encoder_position
         )
+        self.standstill_since = 0
 
         # set motors to starting position
         self.arm_publisher.publish(Int32(data=self.arm_start_position))
