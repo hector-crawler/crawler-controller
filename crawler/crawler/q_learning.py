@@ -114,7 +114,7 @@ class QLearningNode(Node):
             self.get_logger().info("Initialized Q-table from parameters")
         else:
             # At this point we might also think about adding another dimension for self.last_move
-            self.q_table = np.ones([self.arm_states, self.hand_states, MOVES_COUNT])
+            self.q_table = np.fill([self.arm_states, self.hand_states, MOVES_COUNT], 0.5)
             self.get_logger().info("Initialized Q-table with ones")
 
         # move mode
