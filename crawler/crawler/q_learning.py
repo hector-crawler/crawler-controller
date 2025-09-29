@@ -221,7 +221,7 @@ Q-learning parameters:
                 return self.pick_move_exploitation()
             case MoveMode.AUTOMATIC:
                 return self.pick_move_via_q_learning()
-            case _:
+            case move_mode:
                 self.get_logger().error(f"Unknown move mode {move_mode}!")
     
     def pick_move_via_q_learning(self) -> Move:
