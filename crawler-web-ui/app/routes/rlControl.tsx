@@ -200,17 +200,21 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
                 )}
 
                 {/* move mode */}
-                <div className="flex flex-wrap gap-2">
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_WAIT")} disabled={rlInternals.qLearning.moveMode === "USER_WAIT"}>wait</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_UP")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_UP"}>arm up</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_ARM_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_DOWN"}>arm down</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_UP")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_UP"}>hand up</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_HAND_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_DOWN"}>hand down</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP")} disabled={rlInternals.qLearning.moveMode === "USER_STEP"}>step</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLORATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLORATION"}>step (explore)</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLOITATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLOITATION"}>step (exploit)</LargeButton>
-                  <LargeButton smallPadding={true} onClick={() => api.setQLearningMoveMode("AUTOMATIC")} disabled={rlInternals.qLearning.moveMode === "AUTOMATIC"}>automatic</LargeButton>
-                  {rlInternals.qLearning.waitingForUserMove && <div className="bg-red-500 animate-[pulse_700ms_infinite] size-5 rounded-full"></div>}
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_WAIT")} disabled={rlInternals.qLearning.moveMode === "USER_WAIT"}>wait</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("AUTOMATIC")} disabled={rlInternals.qLearning.moveMode === "AUTOMATIC"}>automatic</LargeButton>
+                    {rlInternals.qLearning.waitingForUserMove && <div className="bg-red-500 animate-[pulse_700ms_infinite] size-5 rounded-full"></div>}
+                  </div>
+                  {rlInternals.qLearning.moveMode !== "AUTOMATIC" && <div className="flex flex-wrap gap-2">
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_ARM_UP")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_UP"}>arm up</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_ARM_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_ARM_DOWN"}>arm down</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_HAND_UP")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_UP"}>hand up</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_HAND_DOWN")} disabled={rlInternals.qLearning.moveMode === "USER_HAND_DOWN"}>hand down</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_STEP")} disabled={rlInternals.qLearning.moveMode === "USER_STEP"}>step</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLORATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLORATION"}>step (explore)</LargeButton>
+                    <LargeButton smallPadding={true} extraSmall={true} onClick={() => api.setQLearningMoveMode("USER_STEP_EXPLOITATION")} disabled={rlInternals.qLearning.moveMode === "USER_STEP_EXPLOITATION"}>step (exploit)</LargeButton>
+                  </div>}
                 </div>
               </div>
             </div>

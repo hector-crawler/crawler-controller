@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { useState } from "react";
 
-export function LargeButton({ onClick, children, disabled, smallPadding }: { onClick: () => void, children: React.ReactNode, disabled?: boolean, smallPadding?: boolean }) {
+export function LargeButton({ onClick, children, disabled, smallPadding, extraSmall }: { onClick: () => void, children: React.ReactNode, disabled?: boolean, smallPadding?: boolean, extraSmall?: boolean }) {
   const [isLit, setIsLit] = useState(false);
 
   const handleClick = () => {
@@ -25,6 +25,7 @@ export function LargeButton({ onClick, children, disabled, smallPadding }: { onC
           "transition-[background] ease-out duration-500": !isLit,
         },
         { "p-3": !smallPadding, "p-2": smallPadding },
+        { "h-8 font-semibold px-2": extraSmall },
       )}
       onClick={handleClick}
     >
