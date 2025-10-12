@@ -131,6 +131,7 @@ function QLearningControl({ api, rlInternals }: { api: API, rlInternals: RLInter
   const exportModel = () => {
     if (rlInternals.qLearning) {
       const serializedModel = serializeModel(rlInternals.qLearning);
+      console.log("Exported model:", serializedModel);
       navigator.clipboard.writeText(serializedModel);
       alert("Model copied to clipboard!");
     }
