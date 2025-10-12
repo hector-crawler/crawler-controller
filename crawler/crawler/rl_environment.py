@@ -186,7 +186,7 @@ class RLEnvironmentNode(Node):
         self.loop_state = LoopState.EXECUTING
         self.publish_internals()
 
-        self.publish_state_reward_delayed(0.3)
+        self.publish_state_reward_delayed(1.0)
 
     def publish_state_reward_delayed(self, delay: float) -> None:
         self.publish_state_reward_timer = self.create_timer(delay, self.publish_state_reward_delayed_callback)
