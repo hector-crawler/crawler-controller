@@ -124,7 +124,7 @@ class RLEnvironmentNode(Node):
 
         self.standstill_since = self.standstill_since + 1 if reward == 0 else 0
         if self.standstill_since > 3:
-            reward -= int(1.1**self.standstill_since)
+            reward -= min(100, int(1.2**self.standstill_since))
 
         # calculate reward by adding difference in encoder positions
         self.last_left_encoder_position = self.left_encoder_position
@@ -189,7 +189,9 @@ class RLEnvironmentNode(Node):
         self.publish_state_reward_delayed(1.0)
 
     def publish_state_reward_delayed(self, delay: float) -> None:
-        self.publish_state_reward_timer = self.create_timer(delay, self.publish_state_reward_delayed_callback)
+        self.publish_state_reward_timer = self.create_timer(
+            delay, self.publish_state_reward_delayed_callback
+        )
 
     def publish_state_reward_delayed_callback(self):
         self.publish_state_reward()
