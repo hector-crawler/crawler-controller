@@ -186,8 +186,14 @@ class RLEnvironmentNode(Node):
         self.loop_state = LoopState.EXECUTING
         self.publish_internals()
 
-        time.sleep(0.3)  # TODO: Wait gracefully for motors to stop
+        self.publish_state_reward_delayed(0.3)
+
+    def publish_state_reward_delayed(self, delay: float) -> None:
+        self.publish_state_reward_timer = self.create_timer(delay, self.publish_state_reward_delayed_callback)
+
+    def publish_state_reward_delayed_callback(self):
         self.publish_state_reward()
+        self.publish_state_reward_timer.destroy()
 
     def publish_internals(self) -> None:
         msg = RLEnvironmentInternals()
