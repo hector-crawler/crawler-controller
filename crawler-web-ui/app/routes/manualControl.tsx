@@ -30,7 +30,7 @@ export default function ManualControl({ loaderData }: { loaderData: Route.Loader
       <div className="flex gap-6">
         {/* todo: get motor limits from actual source of truth */}
         <MotorController onMove={async (factor) => await api.moveArm(factor * 100)} minPosition={900} maxPosition={1500} position={manualState.armPosition} />
-        <MotorController onMove={async (factor) => await api.moveHand(factor * 100)} minPosition={2500} maxPosition={3300} position={manualState.handPosition} />
+        <MotorController onMove={async (factor) => await api.moveHand(factor * 100)} minPosition={2900} maxPosition={3700} position={manualState.handPosition} />
       </div>
 
       {/* encoders */}
