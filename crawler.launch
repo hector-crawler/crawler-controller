@@ -12,8 +12,8 @@
         <param name="arm_max_limit" value="1500" />
         <param name="arm_speed" value="5000" />
         <param name="hand_id" value="7" />
-        <param name="hand_min_limit" value="2500" />
-        <param name="hand_max_limit" value="3300" />
+        <param name="hand_min_limit" value="2900" />
+        <param name="hand_max_limit" value="3700" />
         <param name="hand_speed" value="5000" />
     </node>
 
@@ -31,8 +31,8 @@
     <node pkg="crawler" exec="crawler_q_learning">
         <param name="arm_min_limit" value="900" />
         <param name="arm_max_limit" value="1500" />
-        <param name="hand_min_limit" value="2500" />
-        <param name="hand_max_limit" value="3300" />
+        <param name="hand_min_limit" value="2900" />
+        <param name="hand_max_limit" value="3700" />
     </node>
  
 </launch>

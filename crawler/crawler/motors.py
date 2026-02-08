@@ -51,11 +51,11 @@ class MotorsNode(Node):
         # hand parameters
         self.declare_parameter("hand_id", 7)
         hand_id = self.get_parameter("hand_id").get_parameter_value().integer_value
-        self.declare_parameter("hand_min_limit", 2500)
+        self.declare_parameter("hand_min_limit", 2900)
         hand_min_limit = (
             self.get_parameter("hand_min_limit").get_parameter_value().integer_value
         )
-        self.declare_parameter("hand_max_limit", 3300)
+        self.declare_parameter("hand_max_limit", 3700)
         hand_max_limit = (
             self.get_parameter("hand_max_limit").get_parameter_value().integer_value
         )
