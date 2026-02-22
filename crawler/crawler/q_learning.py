@@ -153,20 +153,22 @@ Q-learning parameters:
     def receive_arm_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_arm_state = int(
+        discrete_value = int(
             (msg.data - self.arm_min_limit)
             / (self.arm_max_limit - self.arm_min_limit)
             * self.arm_states
         )
+        self.curr_arm_state = min(max(discrete_value, 0), len(self.q_table)-1)
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
             return
-        self.curr_hand_state = int(
+        discrete_value = int(
             (msg.data - self.hand_min_limit)
             / (self.hand_max_limit - self.hand_min_limit)
             * self.hand_states
         )
+        self.curr_hand_state = min(max(discrete_value, 0), len(self.q_table[self.curr_arm_state])-1)
 
     def send_move(self, m: Move) -> None:
         act = Action()
