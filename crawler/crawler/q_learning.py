@@ -18,6 +18,7 @@ from .move import MOVES_COUNT, Move
 def sigmoid(x: float) -> float:
     return 1 / (1 + np.exp(-x))
 
+
 class MoveMode(Enum):
     USER_WAIT = 0
     USER_ARM_UP = 1
@@ -79,7 +80,10 @@ class QLearningNode(Node):
         )
 
         self.create_subscription(
-            String, "/crawler/rl/q_learning/set_move_mode", self.set_move_mode, queue_len
+            String,
+            "/crawler/rl/q_learning/set_move_mode",
+            self.set_move_mode,
+            queue_len,
         )
 
         self.action_publisher = self.create_publisher(
@@ -107,18 +111,26 @@ class QLearningNode(Node):
         self.explor_decay_factor = parameters.explor_decay_factor
         self.min_explor_rate = parameters.min_explor_rate
         self.discount_factor = parameters.discount_factor
-        
+
         # q table
         if len(parameters.initial_q_table_values) > 0:
-            self.q_table = np.array(parameters.initial_q_table_values).reshape(self.arm_states, self.hand_states, MOVES_COUNT)
+            self.q_table = np.array(parameters.initial_q_table_values).reshape(
+                self.arm_states, self.hand_states, MOVES_COUNT
+            )
             self.get_logger().info("Initialized Q-table from parameters")
         else:
             # At this point we might also think about adding another dimension for self.last_move
-            self.q_table = np.full([self.arm_states, self.hand_states, MOVES_COUNT], 0.5)
+            self.q_table = np.full(
+                [self.arm_states, self.hand_states, MOVES_COUNT], 0.5
+            )
             self.get_logger().info("Initialized Q-table with ones")
 
         # move mode
-        self.move_mode = MoveMode.USER_WAIT if parameters.initial_move_mode_wait else MoveMode.AUTOMATIC
+        self.move_mode = (
+            MoveMode.USER_WAIT
+            if parameters.initial_move_mode_wait
+            else MoveMode.AUTOMATIC
+        )
         self.waiting_for_user_move = False
 
         self.get_logger().info(
@@ -138,7 +150,7 @@ Q-learning parameters:
 
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
-    
+
     def set_move_mode(self, msg) -> None:
         if msg.data in [mode.name for mode in MoveMode]:
             self.move_mode = MoveMode[msg.data]
@@ -158,7 +170,7 @@ Q-learning parameters:
             / (self.arm_max_limit - self.arm_min_limit)
             * self.arm_states
         )
-        self.curr_arm_state = min(max(discrete_value, 0), len(self.q_table)-1)
+        self.curr_arm_state = min(max(discrete_value, 0), len(self.q_table) - 1)
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
@@ -168,7 +180,9 @@ Q-learning parameters:
             / (self.hand_max_limit - self.hand_min_limit)
             * self.hand_states
         )
-        self.curr_hand_state = min(max(discrete_value, 0), len(self.q_table[self.curr_arm_state])-1)
+        self.curr_hand_state = min(
+            max(discrete_value, 0), len(self.q_table[self.curr_arm_state]) - 1
+        )
 
     def send_move(self, m: Move) -> None:
         act = Action()
@@ -225,13 +239,13 @@ Q-learning parameters:
                 return self.pick_move_via_q_learning()
             case move_mode:
                 self.get_logger().error(f"Unknown move mode {move_mode}!")
-    
+
     def pick_move_via_q_learning(self) -> Move:
         if rand.random() < self.explor_rate:
             return self.pick_move_exploration()
         else:
             return self.pick_move_exploitation()
-    
+
     def pick_move_exploration(self) -> Move:
         something_new = rand.choice(np.array(Move))
         self.get_logger().info(f"Randomly selected move {something_new}")

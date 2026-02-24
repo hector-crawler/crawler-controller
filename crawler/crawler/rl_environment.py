@@ -152,7 +152,9 @@ class RLEnvironmentNode(Node):
         self.publish_internals()
 
     def start_rl(self, _) -> None:
-        self.get_logger().info(f"Received request to start RL, loop state: {self.loop_state}")
+        self.get_logger().info(
+            f"Received request to start RL, loop state: {self.loop_state}"
+        )
         if self.loop_state != LoopState.STOPPED:
             raise Exception("Attempted to start RL, but it is already running!")
         self.get_logger().info("Starting RL")
@@ -193,10 +195,15 @@ class RLEnvironmentNode(Node):
     def publish_state_reward_delayed(self, delay: float) -> None:
         callback_id = random.randint(0, 1_000_000)
         self.current_state_reward_callback_id = callback_id
-        self.publish_state_reward_timer = self.create_timer(delay, lambda: self.publish_state_reward_delayed_callback(callback_id))
+        self.publish_state_reward_timer = self.create_timer(
+            delay, lambda: self.publish_state_reward_delayed_callback(callback_id)
+        )
 
     def publish_state_reward_delayed_callback(self, callback_id: int):
-        if self.loop_state != LoopState.EXECUTING or self.current_state_reward_callback_id != callback_id:
+        if (
+            self.loop_state != LoopState.EXECUTING
+            or self.current_state_reward_callback_id != callback_id
+        ):
             return
         self.publish_state_reward()
         self.publish_state_reward_timer.destroy()

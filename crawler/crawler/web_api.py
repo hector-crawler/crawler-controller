@@ -8,10 +8,10 @@ from typing import MutableSequence
 
 import rclpy
 import rclpy.logging
-from crawler_msgs.msg import ( 
-    QLearningInternalState, # type: ignore
-    QLearningParameters, # type: ignore
-    RLEnvironmentInternals, # type: ignore
+from crawler_msgs.msg import (
+    QLearningInternalState,  # type: ignore
+    QLearningParameters,  # type: ignore
+    RLEnvironmentInternals,  # type: ignore
 )
 from flask import Flask, request, send_file
 from flask_cors import CORS
@@ -95,7 +95,7 @@ class WebApiPublisher(Node):
                 initial_move_mode_wait=initial_move_mode_wait,
             )
         )
-    
+
     def rl_q_learning_set_move_mode(self, move_mode: str):
         self.q_learning_set_move_mode_publisher.publish(String(data=move_mode))
 
