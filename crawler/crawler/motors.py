@@ -151,9 +151,11 @@ class MotorsNode(Node):
 
     def move_motor(self, motor: MotorData, step: int) -> int:
         current_position = self.read_motor_position(motor)
-        desired_position = max(
-            motor.min_limit, min(current_position + step, motor.max_limit)
-        )
+        desired_position = current_position + step
+
+        if desired_position > motor.max_limit or desired_position < motor.min_limit:
+            self.get_logger().info(f"Not moving {motor.name} outside of limits")
+            return
 
         comm_result, error = self.packet_handler.write4ByteTxRx(
             self.port_handler, motor.id, GOAL_POS_MEM_ADDR, desired_position
