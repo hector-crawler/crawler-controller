@@ -5,7 +5,9 @@ import rclpy
 from crawler_msgs.msg import (  # type: ignore
     Action,
     NNInternalState,
+    NNParameters,
     StateReward,
+    String,
 )
 from keras import layers, models  # type: ignore
 from keras.optimizers import Adam  # type: ignore
@@ -14,91 +16,46 @@ from rclpy.node import Node
 from std_msgs.msg import Empty, Int32  # type: ignore
 
 from .motors import ARM_RANGE, HAND_RANGE
-from .move import MOVES_COUNT, Move
+from .move import MOVES_COUNT, Move, MoveMode
+
+QUEUE_LEN = 5
 
 
 class NeuralNetworkNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_neural_network")
 
-        # Parameters regarding the motors
-        self.declare_parameter("arm_states", 3)
-        self.arm_states = (
-            self.get_parameter("arm_states").get_parameter_value().integer_value
-        )
-        self.declare_parameter("hand_states", 3)
-        self.hand_states = (
-            self.get_parameter("hand_states").get_parameter_value().integer_value
-        )
-        self.declare_parameter("arm_step", 200)
-        self.arm_step = (
-            self.get_parameter("arm_step").get_parameter_value().integer_value
-        )
-        self.declare_parameter("hand_step", 200)
-        self.hand_step = (
-            self.get_parameter("hand_step").get_parameter_value().integer_value
-        )
-
-        # Parameters regarding the Neural Network
-        self.declare_parameter("inner_layer_width", 100)
-        self.hidden_width = (
-            self.get_parameter("inner_layer_width").get_parameter_value().integer_value
-        )
-        self.declare_parameter("inner_layer_count", 1)
-        self.hidden_count = (
-            self.get_parameter("inner_layer_count").get_parameter_value().integer_value
-        )
-
-        self.declare_parameter("learning_rate", 0.01)
-        self.learning_rate: float = (
-            self.get_parameter("learning_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("explor_rate", 1.0)
-        self.explor_rate: float = (
-            self.get_parameter("explor_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("explor_decay_factor", 0.99)
-        self.explor_decay_factor: float = (
-            self.get_parameter("explor_decay_factor").get_parameter_value().double_value
-        )
-        self.declare_parameter("min_explor_rate", 0.01)
-        self.min_explor_rate: float = (
-            self.get_parameter("min_explor_rate").get_parameter_value().double_value
-        )
-        self.declare_parameter("discount_factor", 0.95)
-        self.discount_factor: float = (
-            self.get_parameter("discount_factor").get_parameter_value().double_value
-        )
-
-        self.declare_parameter("hidden_activation", "relu")
-        self.hidden_activation: str = (
-            self.get_parameter("hidden_activation").get_parameter_value().string_value
-        )
-        self.declare_parameter("output_activation", "linear")
-        self.output_activation: str = (
-            self.get_parameter("output_activation").get_parameter_value().string_value
-        )
-
-        queue_len = 5
         self.internals_publisher = self.create_publisher(
-            NNInternalState, "/crawler/rl/nn/internals", queue_len
+            NNInternalState, "/crawler/rl/nn/internals", QUEUE_LEN
         )
         self.create_timer(1.0, self.publish_internal_state)
 
-        self.create_subscription(Empty, "/crawler/rl/stop", self.stop, queue_len)
+        # start subscriber
+        self.running = False
         self.create_subscription(
-            StateReward, "/crawler/rl/state_reward", self.get_reward, queue_len
+            NNParameters, "/crawler/rl/nn/start", self.start, QUEUE_LEN
+        )
+        self.create_subscription(Empty, "/crawler/rl/stop", self.stop, QUEUE_LEN)
+        self.create_subscription(
+            StateReward, "/crawler/rl/state_reward", self.get_reward, QUEUE_LEN
         )
 
         self.create_subscription(
-            Int32, "/crawler/arm/position", self.receive_arm_pos, queue_len
+            Int32, "/crawler/arm/position", self.receive_arm_pos, QUEUE_LEN
         )
         self.create_subscription(
-            Int32, "/crawler/hand/position", self.receive_hand_pos, queue_len
+            Int32, "/crawler/hand/position", self.receive_hand_pos, QUEUE_LEN
         )
 
         self.action_publisher = self.create_publisher(
-            Action, "/crawler/rl/action", queue_len
+            Action, "/crawler/rl/action", QUEUE_LEN
+        )
+
+        self.create_subscription(
+            String,
+            "/crawler/rl/q_learning/set_move_mode",
+            self.set_move_mode,
+            QUEUE_LEN,
         )
 
         self.last_move = Move.ARM_UP
@@ -106,6 +63,28 @@ class NeuralNetworkNode(Node):
         self.curr_hand_state = 0
         self.last_arm_state = 0
         self.last_hand_state = 0
+
+    def start(self, parameters):
+        if self.running:
+            self.get_logger().info("Q-learning node is already running!")
+            return
+
+        # parameters
+        self.arm_states = parameters.arm_states
+        self.hand_states = parameters.hand_states
+        self.arm_step = parameters.arm_step
+        self.hand_step = parameters.hand_step
+        self.learning_rate = parameters.learning_rate
+        self.explor_rate = parameters.explor_rate
+        self.explor_decay_factor = parameters.explor_decay_factor
+        self.min_explor_rate = parameters.min_explor_rate
+        self.discount_factor = parameters.discount_factor
+
+        
+        self.inner_layer_width = parameters.inner_layer_width
+        self.inner_layer_count = parameters.inner_layer_count
+        self.hidden_activation = parameters.hidden_activation
+        self.output_activation = parameters.output_activation
 
         self.model = models.Sequential()
         motors = 2
@@ -144,7 +123,17 @@ NN parameters:
         )
 
         time.sleep(0.5)
-        self.create_publisher(Empty, "/crawler/rl/start", queue_len).publish(Empty())
+
+        # move mode
+        self.move_mode = (
+            MoveMode.USER_WAIT
+            if parameters.initial_move_mode_wait
+            else MoveMode.AUTOMATIC
+        )
+        self.waiting_for_user_move = False
+
+        self.running = True
+        self.create_publisher(Empty, "/crawler/rl/start", QUEUE_LEN).publish(Empty())
 
     def publish_internal_state(self) -> None:
         msg = NNInternalState()
@@ -192,17 +181,22 @@ NN parameters:
             case Move.HAND_DOWN:
                 self.action_publisher.publish(Action(0, -self.hand_step))
 
-    def pick_move(self) -> Move:
-        if rand.random() < self.explor_rate:
-            something_new = rand.choice(np.array(list(Move)))
-            self.get_logger().info(f"Randomly selected move {something_new}")
-            return something_new
-
+    def pick_move_exploration(self) -> Move:
         arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
         self.last_predicts = self.model.predict(arr)
         move = np.argmax(self.last_predicts)
         self.get_logger().info(f"Selected move {move}")
         return Move(move)
+
+    def pick_move_exploitation(self) -> Move:
+        something_new = rand.choice(np.array(list(Move)))
+        self.get_logger().info(f"Randomly selected move {something_new}")
+        return something_new
+
+    def pick_move(self) -> Move:
+        if rand.random() < self.explor_rate:
+            return self.pick_move_exploration()
+        return self.pick_movr_exploitation()
 
     def learn(self, rw: StateReward) -> None:
         target = self.discount_factor * np.max(self.last_predicts) + rw.reward

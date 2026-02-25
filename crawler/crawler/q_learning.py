@@ -10,25 +10,12 @@ from crawler_msgs.msg import (
 from numpy import random as rand
 from rclpy.node import Node
 from std_msgs.msg import Empty, Int32, String  # type: ignore
-from enum import Enum
 
-from .move import MOVES_COUNT, Move
+from .move import MOVES_COUNT, Move, MoveMode
 
 
 def sigmoid(x: float) -> float:
     return 1 / (1 + np.exp(-x))
-
-
-class MoveMode(Enum):
-    USER_WAIT = 0
-    USER_ARM_UP = 1
-    USER_ARM_DOWN = 2
-    USER_HAND_UP = 3
-    USER_HAND_DOWN = 4
-    USER_STEP = 5
-    USER_STEP_EXPLORATION = 6
-    USER_STEP_EXPLOITATION = 7
-    AUTOMATIC = 8
 
 
 class QLearningNode(Node):
@@ -123,7 +110,7 @@ class QLearningNode(Node):
             self.q_table = np.full(
                 [self.arm_states, self.hand_states, MOVES_COUNT], 0.5
             )
-            self.get_logger().info("Initialized Q-table with ones")
+            self.get_logger().info("Initialized Q-table with 0.5s")
 
         # move mode
         self.move_mode = (
@@ -152,15 +139,16 @@ Q-learning parameters:
         self.create_publisher(Empty, "/crawler/rl/start", 5).publish(Empty())
 
     def set_move_mode(self, msg) -> None:
-        if msg.data in [mode.name for mode in MoveMode]:
-            self.move_mode = MoveMode[msg.data]
-            self.get_logger().info(f"Set move mode to {self.move_mode}")
-            if self.waiting_for_user_move:
-                self.pick_move_and_send()
-                self.waiting_for_user_move = False
-            self.publish_internal_state()
-        else:
+        if msg.data not in [mode.name for mode in MoveMode]:
             self.get_logger().error(f"Unknown move mode {msg.data}!")
+            return
+
+        self.move_mode = MoveMode[msg.data]
+        self.get_logger().info(f"Set move mode to {self.move_mode}")
+        if self.waiting_for_user_move:
+            self.pick_move_and_send()
+            self.waiting_for_user_move = False
+        self.publish_internal_state()
 
     def receive_arm_pos(self, msg) -> None:
         if not self.running:
@@ -243,8 +231,7 @@ Q-learning parameters:
     def pick_move_via_q_learning(self) -> Move:
         if rand.random() < self.explor_rate:
             return self.pick_move_exploration()
-        else:
-            return self.pick_move_exploitation()
+        return self.pick_move_exploitation()
 
     def pick_move_exploration(self) -> Move:
         something_new = rand.choice(np.array(Move))
