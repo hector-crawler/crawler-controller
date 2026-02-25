@@ -190,7 +190,8 @@ class RLEnvironmentNode(Node):
         self.loop_state = LoopState.EXECUTING
         self.publish_internals()
 
-        self.publish_state_reward_delayed(1.0)
+        time_between_moves = 0.5
+        self.publish_state_reward_delayed(time_between_moves)
 
     def publish_state_reward_delayed(self, delay: float) -> None:
         callback_id = random.randint(0, 1_000_000)
