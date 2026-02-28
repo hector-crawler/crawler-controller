@@ -58,11 +58,12 @@ types-flask = ">=1.1.6,<2"
 ruff = ">=0.13.0,<0.14"
 typescript-language-server = ">=4.3.4,<5"
 rsync = ">=3.4.1,<4"
+jedi-language-server = ">=0.46.0,<0.47"
+ty = ">=0.0.18,<0.0.19"
 
 [feature.dev.pypi-dependencies]
 types-flask-cors = ">=5.0.0.20250413, <6"
 types-torch = ">=0.1.1, <0.2"
-#ty = ">=0.0.1a20, <0.0.1a21"
 
 [feature.raspi-only.pypi-dependencies]
 rpi-lgpio = "*"

@@ -1,4 +1,5 @@
 from typing import Optional
+
 import numpy as np
 import rclpy
 from crawler_msgs.msg import (
