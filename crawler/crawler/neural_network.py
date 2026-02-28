@@ -129,36 +129,6 @@ NN parameters:
         self.running = True
         self.create_publisher(Empty, "/crawler/rl/start", QUEUE_LEN).publish(Empty())
 
-    def publish_internal_state(self) -> None:
-        if not self.running:
-            return
-
-        msg = NNInternalState()
-        msg.arm_states = self.arm_states
-        msg.hand_states = self.hand_states
-        msg.arm_step = self.arm_step
-        msg.hand_step = self.hand_step
-        msg.learning_rate = self.learning_rate
-        msg.explor_rate = self.explor_rate
-        msg.explor_decay_factor = self.explor_decay_factor
-        msg.min_explor_rate = self.min_explor_rate
-        msg.discount_factor = self.discount_factor
-
-        msg.hidden_count = self.hidden_count
-        msg.hidden_width = self.hidden_width
-        msg.hidden_activation = self.hidden_activation
-        msg.output_activation = self.output_activation
-        msg.last_predicts = self.last_predicts.flatten()
-
-        self.internals_publisher.publish(msg)
-
-    def stop(self, _) -> None:
-        if not self.running:
-            self.get_logger().info("Neural Network node is not running!")
-            return
-        self.running = False
-        self.get_logger().info("Stopping Neural Network node")
-
     def set_move_mode(self, msg) -> None:
         if msg.data not in [mode.name for mode in MoveMode]:
             self.get_logger().error(f"Unknown move mode {msg.data}!")
@@ -193,11 +163,6 @@ NN parameters:
             max(discrete_value, 0), len(self.q_table[self.curr_arm_state]) - 1
         )
 
-    def get_reward(self, msg) -> None:
-        self.learn(msg.data)
-        self.last_move = self.pick_move()
-        self.send_move(self.last_move)
-
     def send_move(self, m: Move) -> None:
         act = Action()
         match m:
@@ -223,23 +188,6 @@ NN parameters:
         if move is not None:
             self.last_move = move
             self.send_move(self.last_move)
-
-    def pick_move_exploration(self) -> Move:
-        arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
-        self.last_predicts = self.model.predict(arr)
-        move = np.argmax(self.last_predicts)
-        self.get_logger().info(f"Selected move {move}")
-        return Move(move)
-
-    def pick_move_exploitation(self) -> Move:
-        something_new = rand.choice(np.array(list(Move)))
-        self.get_logger().info(f"Randomly selected move {something_new}")
-        return something_new
-
-    def pick_move_via_nn(self) -> Move:
-        if rand.random() < self.explor_rate:
-            return self.pick_move_exploration()
-        return self.pick_move_exploitation()
 
     def pick_move(self) -> Optional[Move]:
         match self.move_mode:
@@ -271,6 +219,29 @@ NN parameters:
             case move_mode:
                 self.get_logger().error(f"Unknown move mode {move_mode}!")
 
+    def pick_move_via_nn(self) -> Move:
+        if rand.random() < self.explor_rate:
+            return self.pick_move_exploration()
+        return self.pick_move_exploitation()
+
+    def pick_move_exploration(self) -> Move:
+        something_new = rand.choice(np.array(list(Move)))
+        self.get_logger().info(f"Randomly selected move {something_new}")
+        self.move_is_exploration = True
+        return something_new
+
+    def pick_move_exploitation(self) -> Move:
+        arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
+        self.last_predicts = self.model.predict(arr)
+        move = np.argmax(self.last_predicts)
+        self.get_logger().info(f"Selected move {move}")
+        self.move_is_exploration = False
+        return Move(move)
+
+    def get_reward(self, msg) -> None:
+        self.learn(msg.data)
+        self.pick_move_and_send()
+
     def learn(self, rw: StateReward) -> None:
         target = self.discount_factor * np.max(self.last_predicts) + rw.reward
         target_vector = self.last_predicts[0]
@@ -280,6 +251,36 @@ NN parameters:
 
         self.explor_rate *= self.explor_decay_factor
         self.explor_rate = max(self.min_explor_rate, self.explor_rate)
+
+    def publish_internal_state(self) -> None:
+        if not self.running:
+            return
+
+        msg = NNInternalState()
+        msg.arm_states = self.arm_states
+        msg.hand_states = self.hand_states
+        msg.arm_step = self.arm_step
+        msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
+        msg.explor_rate = self.explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
+        msg.min_explor_rate = self.min_explor_rate
+        msg.discount_factor = self.discount_factor
+
+        msg.hidden_count = self.hidden_count
+        msg.hidden_width = self.hidden_width
+        msg.hidden_activation = self.hidden_activation
+        msg.output_activation = self.output_activation
+        msg.last_predicts = self.last_predicts.flatten()
+
+        self.internals_publisher.publish(msg)
+
+    def stop(self, _) -> None:
+        if not self.running:
+            self.get_logger().info("Neural Network node is not running!")
+            return
+        self.running = False
+        self.get_logger().info("Stopping Neural Network node")
 
 
 def main(args=None):
