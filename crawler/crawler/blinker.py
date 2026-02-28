@@ -1,8 +1,9 @@
 import os
+
+import gpiozero
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Empty, Bool
-import gpiozero
+from std_msgs.msg import Bool, Empty
 
 
 class Blinker(Node):

@@ -3,16 +3,16 @@ from typing import Optional
 import numpy as np
 import rclpy
 from crawler_msgs.msg import (
-    Action,  # type: ignore
-    QLearningInternalState,  # type: ignore
-    QLearningParameters,  # type: ignore
-    StateReward,  # type: ignore
+    Action,
+    QLearningInternalState,
+    QLearningParameters,
+    StateReward,
 )
 from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32, String  # type: ignore
+from std_msgs.msg import Empty, Int32, String
 
-from .move import MOVES_COUNT, Move, MoveMode
+from crawler.move import MOVES_COUNT, Move, MoveMode
 
 
 def sigmoid(x: float) -> float:
@@ -159,7 +159,7 @@ Q-learning parameters:
             / (self.arm_max_limit - self.arm_min_limit)
             * self.arm_states
         )
-        self.curr_arm_state = min(max(discrete_value, 0), len(self.q_table) - 1)
+        self.curr_arm_state = min(max(discrete_value, 0), self.arm_states - 1)
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
@@ -169,9 +169,7 @@ Q-learning parameters:
             / (self.hand_max_limit - self.hand_min_limit)
             * self.hand_states
         )
-        self.curr_hand_state = min(
-            max(discrete_value, 0), len(self.q_table[self.curr_arm_state]) - 1
-        )
+        self.curr_hand_state = min(max(discrete_value, 0), self.hand_states - 1)
 
     def send_move(self, m: Move) -> None:
         act = Action()

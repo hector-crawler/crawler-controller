@@ -8,9 +8,6 @@ class Move(Enum):
     HAND_DOWN = 3
 
 
-MOVES_COUNT = len(Move)
-
-
 class MoveMode(Enum):
     USER_WAIT = 0
     USER_ARM_UP = 1
@@ -21,3 +18,6 @@ class MoveMode(Enum):
     USER_STEP_EXPLORATION = 6
     USER_STEP_EXPLOITATION = 7
     AUTOMATIC = 8
+
+
+MOVES_COUNT = len(Move)

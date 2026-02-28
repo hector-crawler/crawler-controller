@@ -1,10 +1,10 @@
 import os
 from dataclasses import dataclass
 
-import dynamixel_sdk as dxl  # type: ignore
+import dynamixel_sdk as dxl
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool, Int32  # type: ignore
+from std_msgs.msg import Bool, Int32
 
 PROTOCOL_VERSION = 2.0
 BAUDRATE = 57600
@@ -155,7 +155,7 @@ class MotorsNode(Node):
 
         if desired_position > motor.max_limit or desired_position < motor.min_limit:
             self.get_logger().info(f"Not moving {motor.name} outside of limits")
-            return
+            return -1
 
         comm_result, error = self.packet_handler.write4ByteTxRx(
             self.port_handler, motor.id, GOAL_POS_MEM_ADDR, desired_position
@@ -180,7 +180,7 @@ class MockMotorsNode(Node):
         self.create_subscription(
             Int32,
             "/crawler/arm/move",
-            lambda msg: self.move_arm(msg.data),  # type: ignore
+            lambda msg: self.move_arm(msg.data),
             5,
         )
 
@@ -189,7 +189,7 @@ class MockMotorsNode(Node):
         self.create_subscription(
             Int32,
             "/crawler/hand/move",
-            lambda msg: self.move_hand(msg.data),  # type: ignore
+            lambda msg: self.move_hand(msg.data),
             5,
         )
 

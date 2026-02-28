@@ -8,7 +8,7 @@ float64 explor_decay_factor
 float64 min_explor_rate
 float64 discount_factor
 
-int32 inner_layer_width
-int32 inner_layer_count
+int32 hidden_width
+int32 hidden_count
 string hidden_activation
 string output_activation

@@ -9,15 +9,15 @@ from typing import MutableSequence
 import rclpy
 import rclpy.logging
 from crawler_msgs.msg import (
-    QLearningInternalState,  # type: ignore
-    QLearningParameters,  # type: ignore
-    RLEnvironmentInternals,  # type: ignore
+    QLearningInternalState,
+    QLearningParameters,
+    RLEnvironmentInternals,
 )
 from flask import Flask, request, send_file
 from flask_cors import CORS
-from flask_sock import Sock  # type: ignore
+from flask_sock import Sock
 from rclpy.node import Node
-from std_msgs.msg import Bool, Empty, Int32, String  # type: ignore
+from std_msgs.msg import Bool, Empty, Int32, String
 
 # ROS nodes
 

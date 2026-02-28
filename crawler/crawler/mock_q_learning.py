@@ -1,17 +1,17 @@
 import time
 
 import rclpy
-import torch  # type: ignore
+import torch
 import torch.random  # type: ignore
-from crawler_msgs.msg import (  # type: ignore
+from crawler_msgs.msg import (
     Action,
     QLearningInternalState,
-    QLearningParameters,  # type: ignore
+    QLearningParameters,
     StateReward,
 )
 from numpy import random
 from rclpy.node import Node
-from std_msgs.msg import Empty  # type: ignore
+from std_msgs.msg import Empty
 
 
 class MockQLearningNode(Node):

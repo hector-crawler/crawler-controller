@@ -1,10 +1,10 @@
 import os
 from typing import Callable
 
-import gpiozero  # type: ignore
+import gpiozero
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Int32  # type: ignore
+from std_msgs.msg import Int32
 
 
 class EncodersNode(Node):
@@ -53,13 +53,13 @@ class EncodersNode(Node):
         self.create_subscription(
             Int32,
             "/crawler/left_encoder/mock",
-            lambda msg: self.encoders.mock_left_encoder_position(msg.data),  # type: ignore
+            lambda msg: self.encoders.mock_left_encoder_position(msg.data),
             queue_len,
         )
         self.create_subscription(
             Int32,
             "/crawler/right_encoder/mock",
-            lambda msg: self.encoders.mock_right_encoder_position(msg.data),  # type: ignore
+            lambda msg: self.encoders.mock_right_encoder_position(msg.data),
             queue_len,
         )
 

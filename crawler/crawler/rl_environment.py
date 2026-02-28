@@ -4,9 +4,9 @@ from enum import Enum
 from typing import List
 
 import rclpy
-from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward  # type: ignore
+from crawler_msgs.msg import Action, RLEnvironmentInternals, StateReward
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32  # type: ignore
+from std_msgs.msg import Empty, Int32
 
 
 class LoopState(Enum):
@@ -55,21 +55,21 @@ class RLEnvironmentNode(Node):
         self.create_subscription(
             Int32,
             "/crawler/hand/position",
-            lambda msg: self.update_hand_position(msg.data),  # type: ignore
+            lambda msg: self.update_hand_position(msg.data),
             queue_len,
         )
         self.left_encoder_position = 0
         self.create_subscription(
             Int32,
             "/crawler/left_encoder/position",
-            lambda msg: self.update_left_encoder_position(msg.data),  # type: ignore
+            lambda msg: self.update_left_encoder_position(msg.data),
             queue_len,
         )
         self.right_encoder_position = 0
         self.create_subscription(
             Int32,
             "/crawler/right_encoder/position",
-            lambda msg: self.update_right_encoder_position(msg.data),  # type: ignore
+            lambda msg: self.update_right_encoder_position(msg.data),
             queue_len,
         )
 

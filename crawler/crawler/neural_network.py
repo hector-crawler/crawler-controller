@@ -2,20 +2,19 @@ from typing import Optional
 
 import numpy as np
 import rclpy
-from crawler_msgs.msg import (  # type: ignore
+from crawler_msgs.msg import (
     Action,
     NNInternalState,
     NNParameters,
     StateReward,
-    String,
 )
-from keras import layers, models  # type: ignore
-from keras.optimizers import Adam  # type: ignore
+from keras import layers, models
+from keras.optimizers import Adam
 from numpy import random as rand
 from rclpy.node import Node
-from std_msgs.msg import Empty, Int32  # type: ignore
+from std_msgs.msg import Empty, Int32, String
 
-from .move import MOVES_COUNT, Move, MoveMode
+from crawler.move import MOVES_COUNT, Move, MoveMode
 
 QUEUE_LEN = 5
 
@@ -23,6 +22,24 @@ QUEUE_LEN = 5
 class NeuralNetworkNode(Node):
     def __init__(self) -> None:
         super().__init__("crawler_neural_network")
+
+        # parameters for arm/hand limits
+        self.declare_parameter("arm_min_limit", 900)
+        self.arm_min_limit = (
+            self.get_parameter("arm_min_limit").get_parameter_value().integer_value
+        )
+        self.declare_parameter("arm_max_limit", 1500)
+        self.arm_max_limit = (
+            self.get_parameter("arm_max_limit").get_parameter_value().integer_value
+        )
+        self.declare_parameter("hand_min_limit", 2900)
+        self.hand_min_limit = (
+            self.get_parameter("hand_min_limit").get_parameter_value().integer_value
+        )
+        self.declare_parameter("hand_max_limit", 3700)
+        self.hand_max_limit = (
+            self.get_parameter("hand_max_limit").get_parameter_value().integer_value
+        )
 
         self.internals_publisher = self.create_publisher(
             NNInternalState, "/crawler/rl/nn/internals", QUEUE_LEN
@@ -80,8 +97,8 @@ class NeuralNetworkNode(Node):
         self.min_explor_rate = params.min_explor_rate
         self.discount_factor = params.discount_factor
 
-        self.inner_layer_width = params.inner_layer_width
-        self.inner_layer_count = params.inner_layer_count
+        self.hidden_width = params.hidden_width
+        self.hidden_count = params.hidden_count
         self.hidden_activation = params.hidden_activation
         self.output_activation = params.output_activation
 
@@ -149,7 +166,7 @@ NN parameters:
             / (self.arm_max_limit - self.arm_min_limit)
             * self.arm_states
         )
-        self.curr_arm_state = min(max(discrete_value, 0), len(self.q_table) - 1)
+        self.curr_arm_state = min(max(discrete_value, 0), self.arm_states - 1)
 
     def receive_hand_pos(self, msg) -> None:
         if not self.running:
@@ -159,9 +176,7 @@ NN parameters:
             / (self.hand_max_limit - self.hand_min_limit)
             * self.hand_states
         )
-        self.curr_hand_state = min(
-            max(discrete_value, 0), len(self.q_table[self.curr_arm_state]) - 1
-        )
+        self.curr_hand_state = min(max(discrete_value, 0), self.hand_states - 1)
 
     def send_move(self, m: Move) -> None:
         act = Action()
@@ -271,7 +286,7 @@ NN parameters:
         msg.hidden_width = self.hidden_width
         msg.hidden_activation = self.hidden_activation
         msg.output_activation = self.output_activation
-        msg.last_predicts = self.last_predicts.flatten()
+        msg.last_predicts = self.last_predicts.flatten().tolist()
 
         self.internals_publisher.publish(msg)
 
