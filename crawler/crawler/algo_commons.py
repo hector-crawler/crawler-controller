@@ -49,7 +49,6 @@ class AlgorithmNode(ABC, Node):
             Action, "/crawler/rl/action", QUEUE_LEN
         )
 
-        # start subscriber
         self.running = False
         self.create_subscription(Empty, "/crawler/rl/stop", self.stop, QUEUE_LEN)
         self.create_subscription(
@@ -211,12 +210,34 @@ RL Algorithm parameters:
         self.running = False
         self.get_logger().info(f"Stopping {self.pretty_name} node")
 
-    @abstractmethod
-    def pick_move_exploitation(self) -> Move:
-        pass
+    def update_explor_rate(self) -> None:
+        self.explor_rate *= self.explor_decay_factor
+        self.explor_rate = max(self.min_explor_rate, self.explor_rate)
+
+    def attach_common_params(self, msg):
+        msg.arm_states = self.arm_states
+        msg.hand_states = self.hand_states
+        msg.arm_step = self.arm_step
+        msg.hand_step = self.hand_step
+        msg.learning_rate = self.learning_rate
+        msg.explor_rate = self.explor_rate
+        msg.explor_decay_factor = self.explor_decay_factor
+        msg.min_explor_rate = self.min_explor_rate
+        msg.discount_factor = self.discount_factor
+
+        msg.move_is_exploration = self.move_is_exploration
+
+        msg.move_mode = self.move_mode.name
+        msg.waiting_for_user_move = self.waiting_for_user_move
+
+        return msg
 
     @abstractmethod
     def learn(self, rw: StateReward) -> None:
+        pass
+
+    @abstractmethod
+    def pick_move_exploitation(self) -> Move:
         pass
 
     @abstractmethod

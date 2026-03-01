@@ -84,23 +84,14 @@ NN parameters:
         arr = np.array([[self.curr_arm_state, self.curr_hand_state]])
         self.model.fit(arr, target_vector.reshape(-1, MOVES_COUNT))
 
-        self.explor_rate *= self.explor_decay_factor
-        self.explor_rate = max(self.min_explor_rate, self.explor_rate)
+        self.update_explor_rate()
 
     def publish_internal_state(self) -> None:
         if not self.running:
             return
 
         msg = NNInternalState()
-        msg.arm_states = self.arm_states
-        msg.hand_states = self.hand_states
-        msg.arm_step = self.arm_step
-        msg.hand_step = self.hand_step
-        msg.learning_rate = self.learning_rate
-        msg.explor_rate = self.explor_rate
-        msg.explor_decay_factor = self.explor_decay_factor
-        msg.min_explor_rate = self.min_explor_rate
-        msg.discount_factor = self.discount_factor
+        msg = self.attach_common_params(msg)
 
         msg.hidden_count = self.hidden_count
         msg.hidden_width = self.hidden_width

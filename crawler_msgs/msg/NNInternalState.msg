@@ -13,3 +13,8 @@ int32 hidden_width
 string hidden_activation
 string output_activation
 float64[] last_predicts
+
+bool move_is_exploration
+
+string move_mode
+bool waiting_for_user_move
