@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
@@ -15,7 +15,7 @@ from crawler.move import MOVES_COUNT, Move, MoveMode
 QUEUE_LEN = 5
 
 
-class AlgorithmNode(Node):
+class AlgorithmNode(ABC, Node):
     def __init__(self, node_name, pretty_name) -> None:
         super().__init__(node_name)
         self.pretty_name = pretty_name
@@ -67,10 +67,6 @@ class AlgorithmNode(Node):
         self.create_timer(0.2, self.publish_internal_state)
 
     def start(self, params):
-        if self.running:
-            self.get_logger().info(f"{self.pretty_name} node is already running!")
-            return
-
         # parameters
         self.arm_states = params.arm_states
         self.hand_states = params.hand_states
@@ -204,13 +200,20 @@ RL Algorithm parameters:
         self.move_is_exploration = True
         return something_new
 
-    @abstractmethod
-    def pick_move_exploitation(self) -> Move:
-        pass
-
     def get_reward(self, msg) -> None:
         self.learn(msg.data)
         self.pick_move_and_send()
+
+    def stop(self, _) -> None:
+        if not self.running:
+            self.get_logger().info(f"{self.pretty_name} node is not running!")
+            return
+        self.running = False
+        self.get_logger().info(f"Stopping {self.pretty_name} node")
+
+    @abstractmethod
+    def pick_move_exploitation(self) -> Move:
+        pass
 
     @abstractmethod
     def learn(self, rw: StateReward) -> None:
@@ -219,10 +222,3 @@ RL Algorithm parameters:
     @abstractmethod
     def publish_internal_state(self) -> None:
         pass
-
-    def stop(self, _) -> None:
-        if not self.running:
-            self.get_logger().info(f"{self.pretty_name} node is not running!")
-            return
-        self.running = False
-        self.get_logger().info(f"Stopping {self.pretty_name} node")
