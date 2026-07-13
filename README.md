@@ -45,6 +45,7 @@ Inside the source code folder on the Pi, run the following commands:
 - `pixi run build-web` to build the web app 
 - `pixi run build-ros` to build the ROS package
 - `pixi run launch` to launch all ROS nodes
+- ➡️ Altogether: `pixi run -e raspi start-rpi` to build and run everything correctly (other commands shown on this page might not work)
 
 Now you can access the web interface on port 5000 of the Raspberry Pi.
 
